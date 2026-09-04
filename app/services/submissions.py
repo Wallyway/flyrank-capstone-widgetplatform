@@ -57,7 +57,9 @@ class SubmissionsService:
                 "spam_reason": "honeypot" if is_spam else None,
                 "idempotency_key": idempotency_key,
                 **location,
-            }
+            },
+            # Spam gets stored but nobody gets emailed about it.
+            notify=not is_spam,
         )
 
         # None means the unique index caught a replay that arrived while the

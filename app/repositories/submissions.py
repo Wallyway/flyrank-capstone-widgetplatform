@@ -13,15 +13,18 @@ class SubmissionsRepository:
     def __init__(self, pool: ConnectionPool):
         self.pool = pool
 
-    def create(self, submission: dict) -> Optional[dict]:
+    def create(self, submission: dict, notify: bool = False) -> Optional[dict]:
         """Insert one row, or return None if this idempotency key already exists.
 
         ON CONFLICT DO NOTHING makes the replay harmless at the database level
         instead of relying on a check-then-insert, which two requests arriving
         together would both pass.
+
+        The notification job is written on the same connection, so a submission
+        can never exist without the job that is supposed to follow it.
         """
         with self.pool.connection() as conn:
-            return conn.execute(
+            row = conn.execute(
                 "INSERT INTO submissions "
                 "(widget_id, tenant_id, data, ip, user_agent, referer, country, country_code, city, "
                 " geo_provider, geo_status, is_spam, spam_reason, idempotency_key) "
@@ -46,6 +49,14 @@ class SubmissionsRepository:
                     submission.get("idempotency_key"),
                 ),
             ).fetchone()
+
+            if row and notify:
+                conn.execute(
+                    "INSERT INTO notification_jobs (submission_id) VALUES (%s) "
+                    "ON CONFLICT (submission_id) DO NOTHING",
+                    (row["id"],),
+                )
+            return row
 
     def find_by_idempotency_key(self, widget_id: str, key: str) -> Optional[dict]:
         with self.pool.connection() as conn:

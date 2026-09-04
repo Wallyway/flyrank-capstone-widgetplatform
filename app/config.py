@@ -35,6 +35,9 @@ GEO_PROVIDER_B_DOWN = os.getenv("GEO_PROVIDER_B_DOWN", "0") == "1"
 GEO_FORCE_CLIENT_IP = os.getenv("GEO_FORCE_CLIENT_IP", "")
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
+# Makes the side effect throw on every attempt. Exists so the "a failing
+# notification does not break the submission" claim can be proven on demand.
+NOTIFY_FORCE_FAILURE = os.getenv("NOTIFY_FORCE_FAILURE", "0") == "1"
 NOTIFY_TIMEOUT_SECONDS = float(os.getenv("NOTIFY_TIMEOUT_SECONDS", "5.0"))
 NOTIFY_MAX_ATTEMPTS = int(os.getenv("NOTIFY_MAX_ATTEMPTS", "4"))
 NOTIFY_POLL_SECONDS = float(os.getenv("NOTIFY_POLL_SECONDS", "2.0"))

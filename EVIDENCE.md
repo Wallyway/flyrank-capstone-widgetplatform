@@ -381,7 +381,36 @@ submission is stored regardless:
 localhost    status 201  skipped_private_ip | -
 ```
 
-- [ ] A failing confirmation email / webhook does not prevent the submission from being stored.
+- [x] A failing confirmation email / webhook does not prevent the submission from being stored.
+
+**Stage 8.** With `NOTIFY_FORCE_FAILURE=1`, every delivery attempt throws. The visitor never finds
+out — the response is a `201` in 62 milliseconds, because the notification was never on their path:
+
+```
+$ NOTIFY_FORCE_FAILURE=1 docker compose up -d app
+$ curl -i -X POST .../public/submissions -d '{"widget_id":"wgt_demo_contact", ...}'
+HTTP/1.1 201 Created
+{"id":49,"status":"received"}
+total time: 0.061933s
+
+ id |           email           | geo_status
+----+---------------------------+------------
+ 49 | notify-broken@example.com | ok
+```
+
+Behind them, the worker retries on a growing backoff and then gives up loudly:
+
+```
+app-1  | notify: job 2 failed (RuntimeError: forced failure); attempt 1, retrying in 2s
+app-1  | notify: job 2 failed (RuntimeError: forced failure); attempt 2, retrying in 4s
+app-1  | notify: job 2 failed (RuntimeError: forced failure); attempt 3, retrying in 8s
+app-1  | ALERT notify: job 2 dead after 4 attempts (submission 49) — RuntimeError: forced failure
+
+ id | submission_id |  status   | attempts |                  last_error
+----+---------------+-----------+----------+----------------------------------------------
+  1 |            48 | delivered |        1 |
+  2 |            49 | dead      |        4 | RuntimeError: forced failure (NOTIFY_FORCE_F
+```
 
 ## Documentation
 
@@ -409,7 +438,25 @@ app/
 **Stages 3 and 5.** See the two blocks above: the admin API rejects a bad widget body with a named
 field, and the public endpoint rejects malformed, oversized, unknown-field and wrong-type payloads
 the same way. `grep -c ' 500 '` over the whole session log returns 0.
-- [ ] 3 · ≥1 background job — off the request path, retries + failure alert
+- [x] 3 · ≥1 background job — off the request path, retries + failure alert
+
+**Stage 8.** The request writes one row to `notification_jobs` inside the same transaction as the
+submission — a submission can never exist without the job that follows it — and returns. An asyncio
+worker claims due jobs with `FOR UPDATE SKIP LOCKED`, so a second process would pick different rows
+rather than wait:
+
+```
+app-1  | Notification worker started | max attempts 4
+app-1  | notify: email to notify-ok@example.com — "Talk to us" received
+app-1  | notify: job 1 delivered for submission 48
+
+ id | submission_id |  status   | attempts | last_error
+----+---------------+-----------+----------+------------
+  1 |            48 | delivered |        1 |
+```
+
+Retries, backoff and the dead-letter alert are in the block under "a failing confirmation email"
+above.
 - [x] 4 · Real persistence — schema as migrations, right indexes, isolated tenants
 
 **Stage 2.** `docker compose up` boots the stack, the migration runner applies `001_init.sql` once

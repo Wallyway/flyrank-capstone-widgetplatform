@@ -9,11 +9,13 @@ from app.core.db import build_pool, run_migrations
 from app.core.errors import register_error_handlers
 from app.middleware.body_limit import BodyLimitMiddleware
 from app.middleware.cors import PublicCORSMiddleware
+from app.repositories.notifications import NotificationsRepository
 from app.repositories.submissions import SubmissionsRepository
 from app.repositories.tenants import TenantsRepository
 from app.repositories.widgets import WidgetsRepository
 from app.services.delivery import DeliveryService
 from app.services.geo import GeoService
+from app.services.notifications import NotificationWorker
 from app.services.ratelimit import RateLimiter
 from app.services.submissions import SubmissionsService
 from app.services.widgets import WidgetsService
@@ -23,8 +25,10 @@ from app.services.widgets import WidgetsService
 async def lifespan(app: FastAPI):
     applied = run_migrations(app.state.pool)
     schema = f"applied {', '.join(applied)}" if applied else "schema up to date"
-    print(f"Server running | db ok | {schema}")
+    print(f"Server running | db ok | {schema} | geo chain {', '.join(config.GEO_PROVIDERS)}")
+    app.state.worker.start()
     yield
+    await app.state.worker.stop()
     app.state.pool.close()
 
 
@@ -49,6 +53,8 @@ app.state.limiter = RateLimiter(
     config.RATE_LIMIT_PER_WIDGET_WINDOW,
 )
 app.state.geo = GeoService.from_config()
+app.state.notifications = NotificationsRepository(app.state.pool)
+app.state.worker = NotificationWorker(app.state.notifications)
 app.state.submissions_service = SubmissionsService(
     app.state.delivery, app.state.submissions, app.state.limiter, app.state.geo
 )
