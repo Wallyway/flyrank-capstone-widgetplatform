@@ -79,6 +79,30 @@ $ curl -H "Authorization: Bearer $ACME_KEY" .../wgt_d164428aed89f49d     # untou
 wgt_d164428aed89f49d | Join the Acme beta | config_version 1
 ```
 
+**Stage 9.** The same holds for submissions and every statistic. Globex's totals are its own, and
+asking for an Acme widget by id returns an empty page rather than an error or someone else's data:
+
+```
+$ curl -H "Authorization: Bearer $GLOBEX_KEY" .../api/stats/overview
+{"total": 25, "spam_blocked": 0, "enriched": 0, ...}
+
+$ curl -H "Authorization: Bearer $GLOBEX_KEY" .../api/stats/by-widget
+  wgt_demo_globex    cta   total 25   spam 0   Book a Globex demo
+
+$ curl -H "Authorization: Bearer $GLOBEX_KEY" '.../api/submissions?widget_id=wgt_demo_signup'
+  total: 0 items: 0
+```
+
+Every dashboard route refuses an anonymous caller:
+
+```
+  /api/submissions         401 {"error":"API key required"}
+  /api/stats/overview      401 {"error":"API key required"}
+  /api/stats/by-widget     401 {"error":"API key required"}
+  /api/stats/geo           401 {"error":"API key required"}
+  /api/stats/timeseries    401 {"error":"API key required"}
+```
+
 - [x] Embed snippet generated per widget.
 
 **Stage 3.**
@@ -411,6 +435,59 @@ app-1  | ALERT notify: job 2 dead after 4 attempts (submission 49) — RuntimeEr
   1 |            48 | delivered |        1 |
   2 |            49 | dead      |        4 | RuntimeError: forced failure (NOTIFY_FORCE_F
 ```
+
+## Owner dashboard
+
+- [x] Counts over time, per-widget stats and a geo breakdown, all tenant-scoped.
+
+**Stage 9.** Spam is stored but left out of every number, so the totals a customer sees are leads
+and nothing else — `/api/submissions` and `/api/stats/overview` agree because they share one filter:
+
+```
+$ curl -H "Authorization: Bearer $ACME_KEY" .../api/stats/overview
+{
+    "total": 23,
+    "last_7_days": 23,
+    "last_24_hours": 23,
+    "spam_blocked": 1,
+    "enriched": 6,
+    "last_submission_at": "2026-09-04T22:17:10.856514+00:00",
+    "enriched_percent": 26
+}
+
+  overview total       23 | spam blocked 1
+  submissions total    23
+  including spam       24     # ?include_spam=true, for when the owner wants to look
+
+$ ... /api/stats/by-widget
+  wgt_demo_signup    signup_form   total 13   spam 0   Join the Acme beta
+  wgt_demo_contact   contact_form  total 10   spam 1   Talk to us
+
+$ ... /api/stats/geo
+  Unknown          --   17
+  Spain            ES   3
+  United States    US   2
+  Germany          DE   1
+
+$ ... '/api/stats/timeseries?days=5'
+  2026-08-31  0
+  2026-09-01  0
+  2026-09-02  0
+  2026-09-03  0
+  2026-09-04  23   #######################
+
+$ ... '/api/submissions?limit=5'
+  total 23 (showing 5)
+  #49   wgt_demo_contact   notify-broken@example.com Spain, Madrid
+  #48   wgt_demo_contact   notify-ok@example.com     Spain, Madrid
+  #47   wgt_demo_contact   private@example.com       -, -
+  #46   wgt_demo_contact   real2@example.com         United States, Mountain View
+  #45   wgt_demo_contact   real1@example.com         United States, Ashburn
+```
+
+The quiet days come back as zeros rather than being missing, because the query builds its own date
+range with `generate_series` and left-joins onto it — a chart drawn from this cannot invent a
+straight line across a gap.
 
 ## Documentation
 

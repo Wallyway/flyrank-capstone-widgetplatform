@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import config
+from app.api.dashboard import router as dashboard_router
 from app.api.public import router as public_router
 from app.api.widgets import router as widgets_router
 from app.core.db import build_pool, run_migrations
@@ -10,9 +11,11 @@ from app.core.errors import register_error_handlers
 from app.middleware.body_limit import BodyLimitMiddleware
 from app.middleware.cors import PublicCORSMiddleware
 from app.repositories.notifications import NotificationsRepository
+from app.repositories.stats import StatsRepository
 from app.repositories.submissions import SubmissionsRepository
 from app.repositories.tenants import TenantsRepository
 from app.repositories.widgets import WidgetsRepository
+from app.services.dashboard import DashboardService
 from app.services.delivery import DeliveryService
 from app.services.geo import GeoService
 from app.services.notifications import NotificationWorker
@@ -53,6 +56,8 @@ app.state.limiter = RateLimiter(
     config.RATE_LIMIT_PER_WIDGET_WINDOW,
 )
 app.state.geo = GeoService.from_config()
+app.state.stats = StatsRepository(app.state.pool)
+app.state.dashboard = DashboardService(app.state.submissions, app.state.stats)
 app.state.notifications = NotificationsRepository(app.state.pool)
 app.state.worker = NotificationWorker(app.state.notifications)
 app.state.submissions_service = SubmissionsService(
@@ -66,6 +71,7 @@ app.add_middleware(PublicCORSMiddleware)
 register_error_handlers(app)
 app.include_router(public_router)
 app.include_router(widgets_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/health", summary="Health check")

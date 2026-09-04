@@ -65,12 +65,10 @@ class SubmissionsRepository:
                 (widget_id, key),
             ).fetchone()
 
-    def list_for_tenant(self, tenant_id: int, widget_id: Optional[str], limit: int, offset: int) -> list[dict]:
-        clauses = ["tenant_id = %s"]
-        values: list = [tenant_id]
-        if widget_id:
-            clauses.append("widget_id = %s")
-            values.append(widget_id)
+    def list_for_tenant(
+        self, tenant_id: int, widget_id: Optional[str], limit: int, offset: int, include_spam: bool = False
+    ) -> list[dict]:
+        clauses, values = self.filters(tenant_id, widget_id, include_spam)
         values.extend([limit, offset])
         with self.pool.connection() as conn:
             return conn.execute(
@@ -79,15 +77,23 @@ class SubmissionsRepository:
                 tuple(values),
             ).fetchall()
 
-    def count_for_tenant(self, tenant_id: int, widget_id: Optional[str]) -> int:
-        clauses = ["tenant_id = %s"]
-        values: list = [tenant_id]
-        if widget_id:
-            clauses.append("widget_id = %s")
-            values.append(widget_id)
+    def count_for_tenant(self, tenant_id: int, widget_id: Optional[str], include_spam: bool = False) -> int:
+        clauses, values = self.filters(tenant_id, widget_id, include_spam)
         with self.pool.connection() as conn:
             row = conn.execute(
                 f"SELECT COUNT(*) AS total FROM submissions WHERE {' AND '.join(clauses)}",
                 tuple(values),
             ).fetchone()
             return row["total"]
+
+    # Spam rows are kept, but the owner does not have to look at them. Both the
+    # list and its total use the same filter, so the count always matches.
+    def filters(self, tenant_id: int, widget_id: Optional[str], include_spam: bool) -> tuple[list[str], list]:
+        clauses = ["tenant_id = %s"]
+        values: list = [tenant_id]
+        if widget_id:
+            clauses.append("widget_id = %s")
+            values.append(widget_id)
+        if not include_spam:
+            clauses.append("NOT is_spam")
+        return clauses, values
