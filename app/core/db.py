@@ -4,7 +4,8 @@ import time
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
-MIGRATIONS_DIR = Path(__file__).parent / "migrations"
+# app/core/db.py -> app/core -> app -> repository root
+MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
 
 
 # Compose starts the db and the app at the same time. The healthcheck covers

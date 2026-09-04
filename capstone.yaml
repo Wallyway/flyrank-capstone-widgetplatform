@@ -5,7 +5,7 @@ language: python
 framework: fastapi
 
 run: docker compose up --build
-seed: docker compose exec app python seed.py
+seed: docker compose exec app python -m scripts.seed
 test: docker compose exec app python -m pytest -q
 
 base_url: http://localhost:8000

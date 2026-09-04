@@ -4,11 +4,11 @@ Safe to run twice: tenants and widgets are only created if missing. A new API
 key is issued each run and printed once, since only its hash is stored.
 """
 
-import config
-from db import build_pool, run_migrations
-from ids import hash_key, new_api_key, new_widget_id
-from tenants_repo import TenantsRepository
-from widgets_repo import WidgetsRepository
+from app import config
+from app.core.db import build_pool, run_migrations
+from app.core.ids import hash_key, new_api_key, new_widget_id
+from app.repositories.tenants import TenantsRepository
+from app.repositories.widgets import WidgetsRepository
 
 TENANTS = [
     {

@@ -9,9 +9,84 @@ Proofs are added in the stage that produces them, not at the end.
 
 ## Widget management
 
-- [ ] Authenticated CRUD endpoints for widgets; requests without valid auth are rejected.
-- [ ] Multi-tenant isolation proven: tenant A cannot read or modify tenant B's widgets or submissions.
-- [ ] Embed snippet generated per widget.
+- [x] Authenticated CRUD endpoints for widgets; requests without valid auth are rejected.
+
+**Stage 3.** No key and a wrong key are both rejected before anything else runs:
+
+```
+$ curl -s -w '%{http_code} ' http://localhost:8000/api/widgets
+401 {"error":"API key required"}
+
+$ curl -s -w '%{http_code} ' -H "Authorization: Bearer wpk_nope" http://localhost:8000/api/widgets
+401 {"error":"Invalid API key"}
+```
+
+Full CRUD with the right key. `config_version` bumps on every edit so a cached config can be told
+apart from a fresh one:
+
+```
+$ curl -X POST -H "Authorization: Bearer $ACME_KEY" -d '{"type":"cta","title":"Download the report", ...}'
+status 201
+wgt_3278a50f3135e355 | Download the report | version 1 | active True
+
+$ curl -X PATCH ... -d '{"button_text":"Get the PDF"}'
+Get the PDF | config_version 2
+
+$ curl -X DELETE ...    # then GET the same id
+204 404 {"error":"Widget wgt_3278a50f3135e355 not found"}
+```
+
+Bad bodies are rejected at the boundary with a named field, never a 500:
+
+```
+$ curl -X POST ... -d '{"type":"newsletter","title":"","fields":[]}'
+400 {"error":"type: Value error, must be one of ['contact_form', 'cta', 'popover', 'signup_form']; title: String should have at least 1 character; fields: List should have at least 1 item after validation, not 0"}
+
+$ curl -X POST ... -d '{"type":"cta","title":"x","fields":[{"name":"a","label":"A","type":"select"}]}'
+400 {"error":"fields: 'a' is a select with no options"}
+
+$ curl -X POST ... -d '... two fields both named "email" ...'
+400 {"error":"fields: duplicate field name email"}
+```
+
+- [x] Multi-tenant isolation proven: tenant A cannot read or modify tenant B's widgets or submissions.
+
+**Stage 3.** Each key sees only its own rows:
+
+```
+$ curl -H "Authorization: Bearer $ACME_KEY"   http://localhost:8000/api/widgets
+wgt_b1047ac084d968b0 1 contact_form | Talk to us
+wgt_d164428aed89f49d 1 signup_form  | Join the Acme beta
+
+$ curl -H "Authorization: Bearer $GLOBEX_KEY" http://localhost:8000/api/widgets
+wgt_afbd2a84aa174ae4 2 cta | Book a Globex demo
+```
+
+Globex's key against Acme's widget — read, write and delete all answer `404`, not `403`, so the id
+is never confirmed to exist:
+
+```
+$ curl        -H "Authorization: Bearer $GLOBEX_KEY" .../api/widgets/wgt_d164428aed89f49d
+404 {"error":"Widget wgt_d164428aed89f49d not found"}
+
+$ curl -X PATCH  -H "Authorization: Bearer $GLOBEX_KEY" -d '{"title":"hijacked"}' .../wgt_d164428aed89f49d
+404 {"error":"Widget wgt_d164428aed89f49d not found"}
+
+$ curl -X DELETE -H "Authorization: Bearer $GLOBEX_KEY" .../wgt_d164428aed89f49d
+404
+
+$ curl -H "Authorization: Bearer $ACME_KEY" .../wgt_d164428aed89f49d     # untouched
+wgt_d164428aed89f49d | Join the Acme beta | config_version 1
+```
+
+- [x] Embed snippet generated per widget.
+
+**Stage 3.**
+
+```
+$ curl -H "Authorization: Bearer $ACME_KEY" http://localhost:8000/api/widgets/wgt_3278a50f3135e355/embed
+{"widget_id":"wgt_3278a50f3135e355","snippet":"<script src=\"http://localhost:8000/widget.js?id=wgt_3278a50f3135e355\" async></script>"}
+```
 
 ## Widget delivery
 
@@ -44,7 +119,19 @@ Proofs are added in the stage that produces them, not at the end.
 
 ## Shared requirements (Section 13)
 
-- [ ] 1 · Layered architecture — data / logic / HTTP separated
+- [x] 1 · Layered architecture — data / logic / HTTP separated
+
+**Stage 3.** One package per layer. No SQL exists outside `app/repositories/`, and no HTTP status
+code is decided inside them:
+
+```
+app/
+├── api/           HTTP: routers, request models, the auth dependency
+├── services/      logic: what is valid, what is a 404, what gets stored
+├── repositories/  data: every SQL statement in the project
+├── core/          db pool, migration runner, ids/hashing, error handlers
+└── config.py      every env var, one place
+```
 - [ ] 2 · Validation at the boundary — bad input → clean 4xx, never a 500
 - [ ] 3 · ≥1 background job — off the request path, retries + failure alert
 - [x] 4 · Real persistence — schema as migrations, right indexes, isolated tenants
