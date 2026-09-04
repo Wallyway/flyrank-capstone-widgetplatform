@@ -3,11 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Customer site (second origin)</title>
+  <title>Northwind Coffee — customer site</title>
+  <style>
+    body { font-family: Georgia, serif; margin: 40px auto; max-width: 640px; padding: 0 20px; }
+    .note { font-size: 13px; color: #555; border-left: 3px solid #ccc; padding-left: 12px; }
+
+    /* Deliberately hostile: if the widget were not in a shadow root, these
+       rules would repaint every input and button inside it. */
+    input, textarea, select { background: #ffe9e9 !important; border: 3px dashed red !important; }
+    button { background: red !important; color: yellow !important; text-transform: uppercase !important; }
+  </style>
 </head>
 <body>
-  <h1>Second origin placeholder</h1>
-  <p>Served from http://localhost:5500 while the API runs on http://localhost:8000.</p>
-  <p>The widget embed snippet lands here in Stage 4.</p>
+  <h1>Northwind Coffee</h1>
+  <p>A pretend customer website, served by nginx on <code>http://localhost:5500</code> while the API
+     runs on <code>http://localhost:8000</code>. Two origins, which is the whole point.</p>
+
+  <p class="note">This page's CSS tries to paint every input red and dashed. The widget below is
+     rendered inside a shadow root, so none of it gets through. The plain input underneath shows
+     what those rules do to an element that <em>is</em> exposed to them.</p>
+
+  <h2>Join our list</h2>
+  <!-- The one line a customer pastes. Nothing else on this page knows about the platform. -->
+  <script src="http://localhost:8000/widget.js?id=wgt_demo_signup" async></script>
+
+  <h2>An ordinary input, for comparison</h2>
+  <input type="text" placeholder="this one is not protected">
 </body>
 </html>

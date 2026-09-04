@@ -3,11 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import config
+from app.api.public import router as public_router
 from app.api.widgets import router as widgets_router
 from app.core.db import build_pool, run_migrations
 from app.core.errors import register_error_handlers
+from app.middleware.cors import PublicCORSMiddleware
 from app.repositories.tenants import TenantsRepository
 from app.repositories.widgets import WidgetsRepository
+from app.services.delivery import DeliveryService
 from app.services.widgets import WidgetsService
 
 
@@ -32,8 +35,11 @@ app.state.pool = build_pool(config.DATABASE_URL)
 app.state.tenants = TenantsRepository(app.state.pool)
 app.state.widgets = WidgetsRepository(app.state.pool)
 app.state.widgets_service = WidgetsService(app.state.widgets)
+app.state.delivery = DeliveryService(app.state.widgets)
 
+app.add_middleware(PublicCORSMiddleware)
 register_error_handlers(app)
+app.include_router(public_router)
 app.include_router(widgets_router)
 
 

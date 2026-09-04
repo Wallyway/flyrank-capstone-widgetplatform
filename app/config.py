@@ -7,6 +7,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://widgetuser:widgetpass@loc
 
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
 
+# Which bundle a new embed points at. Shipping new widget code means adding
+# widget.v2.js and bumping this; the old URL keeps serving the old file, which
+# is what makes caching it for a year safe.
+WIDGET_BUNDLE_VERSION = os.getenv("WIDGET_BUNDLE_VERSION", "v1")
+BUNDLE_MAX_AGE = int(os.getenv("BUNDLE_MAX_AGE", "31536000"))
+LOADER_MAX_AGE = int(os.getenv("LOADER_MAX_AGE", "300"))
+CONFIG_MAX_AGE = int(os.getenv("CONFIG_MAX_AGE", "60"))
+
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "8192"))
 MAX_FIELD_LENGTH = int(os.getenv("MAX_FIELD_LENGTH", "2000"))
 

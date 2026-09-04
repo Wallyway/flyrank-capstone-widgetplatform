@@ -90,9 +90,87 @@ $ curl -H "Authorization: Bearer $ACME_KEY" http://localhost:8000/api/widgets/wg
 
 ## Widget delivery
 
-- [ ] Public config endpoint serves a small payload with correct HTTP cache headers.
-- [ ] Widget JavaScript is served as a versioned bundle.
-- [ ] The widget renders on a page served from a different origin than the API.
+- [x] Public config endpoint serves a small payload with correct HTTP cache headers.
+
+**Stage 4.** 641 bytes, a 60-second cache and a weak ETag built from `config_version`:
+
+```
+$ curl -sI http://localhost:8000/public/widgets/wgt_demo_signup/config -H 'Origin: http://localhost:5500'
+HTTP/1.1 200 OK
+cache-control: public, max-age=60
+etag: W/"wgt_demo_signup-1"
+access-control-allow-origin: *
+vary: Origin
+
+$ curl -s -w ' bytes %{size_download}' .../config -o /dev/null
+ bytes 641
+```
+
+Revalidation costs nothing:
+
+```
+$ curl -H 'If-None-Match: W/"wgt_demo_signup-1"' .../config
+status 304, body bytes 0
+```
+
+- [x] Widget JavaScript is served as a versioned bundle.
+
+**Stage 4.** Three different cache lifetimes on purpose — the bundle URL never changes content, so it
+is immutable for a year; the loader is short because it decides which bundle version runs:
+
+```
+$ curl -sI http://localhost:8000/static/widget.v1.js
+HTTP/1.1 200 OK
+cache-control: public, max-age=31536000, immutable
+content-type: application/javascript; charset=utf-8
+content-length: 6278
+
+$ curl -sI 'http://localhost:8000/widget.js?id=wgt_demo_signup'
+HTTP/1.1 200 OK
+cache-control: public, max-age=300
+```
+
+A version that does not exist, and a path-traversal attempt, are both refused:
+
+```
+$ curl .../static/widget.v9.js              404 {"error":"Unknown bundle version"}
+$ curl '.../static/widget.../etc/passwd.js' 404 {"error":"Not Found"}
+```
+
+- [x] The widget renders on a page served from a different origin than the API.
+
+**Stage 4.** The customer page is served by nginx on `http://localhost:5500`; the API is on
+`http://localhost:8000`. Two origins. This is the exact chain the browser walks, every hop
+cross-origin:
+
+```
+$ curl -s http://localhost:5500/ | grep widget.js
+  <script src="http://localhost:8000/widget.js?id=wgt_demo_signup" async></script>
+
+# 2 · the loader, requested with Origin: http://localhost:5500
+$ curl -s -H 'Origin: http://localhost:5500' 'http://localhost:8000/widget.js?id=wgt_demo_signup'
+(function () {
+  var base = "http://localhost:8000";
+  var widgetId = "wgt_demo_signup";
+  var bundle = "http://localhost:8000/static/widget.v1.js";
+  ...
+})();
+
+# 3 · the bundle the loader injects
+status 200  bytes 6278  cache-control: public, max-age=31536000, immutable
+
+# 4 · the config the bundle fetches
+status 200  bytes 641
+```
+
+The widget mounts inside a **shadow root**, so the host page cannot restyle it. `testsite/index.html`
+proves this on purpose: it declares `input { background:#ffe9e9 !important; border: 3px dashed red
+!important }` and `button { background:red !important }`, and leaves one unprotected input next to
+the widget for comparison.
+
+> Visual confirmation is done by opening <http://localhost:5500> in a browser. Headless rendering was
+> not usable in this environment, so no screenshot is claimed here — the request chain above is what
+> is actually machine-verified.
 
 ## Public submission API
 

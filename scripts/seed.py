@@ -15,6 +15,7 @@ TENANTS = [
         "name": "Acme Analytics",
         "widgets": [
             {
+                "id": "wgt_demo_signup",
                 "type": "signup_form",
                 "title": "Join the Acme beta",
                 "description": "Weekly product notes. One click to leave, always.",
@@ -33,6 +34,7 @@ TENANTS = [
                 "options": {"theme": "auto", "layout": "inline", "success_message": "You're on the list."},
             },
             {
+                "id": "wgt_demo_contact",
                 "type": "contact_form",
                 "title": "Talk to us",
                 "description": "We answer every message within one business day.",
@@ -49,6 +51,7 @@ TENANTS = [
         "name": "Globex Industrial",
         "widgets": [
             {
+                "id": "wgt_demo_globex",
                 "type": "cta",
                 "title": "Book a Globex demo",
                 "description": "Thirty minutes, your data, no slides.",
@@ -80,20 +83,23 @@ def seed():
         key = new_api_key()
         tenants.add_api_key(tenant["id"], hash_key(key), label="seed")
 
-        existing = widgets.list_for_tenant(tenant["id"])
-        if existing:
-            created = existing
-        else:
-            created = [widgets.create(new_widget_id(), tenant["id"], w) for w in spec["widgets"]]
+        # Demo widgets keep a fixed id so the test page can carry the real embed
+        # snippet. Widgets created through the API still get a random one.
+        created = []
+        for widget_spec in spec["widgets"]:
+            widget_id = widget_spec.get("id") or new_widget_id()
+            existing = widgets.get_for_tenant(widget_id, tenant["id"])
+            created.append(existing or widgets.create(widget_id, tenant["id"], widget_spec))
 
         print(f"{spec['name']}  (tenant {tenant['id']})")
         print(f"  API key: {key}")
         for widget in created:
-            print(f"  {widget['id']}  {widget['type']:<13} {widget['title']}")
+            print(f"  {widget['id']:<20} {widget['type']:<13} {widget['title']}")
         print()
 
     print("Try it:")
     print("  curl -H 'Authorization: Bearer <key above>' http://localhost:8000/api/widgets")
+    print("  open http://localhost:5500   (the customer site, on a second origin)")
     print()
     print("The keys above are shown once. Only their sha256 hash is stored.")
 
