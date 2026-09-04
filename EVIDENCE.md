@@ -554,7 +554,34 @@ $ ... -tAc "SELECT COUNT(*) FROM tenants;"
 
 ## Documentation
 
-- [ ] README with architecture diagram, setup instructions, and API documentation.
+- [x] README with architecture diagram, setup instructions, and API documentation.
+
+**Stage 11.** [README.md](README.md) carries an ASCII diagram of all three request paths plus the
+worker, the layer map, the data model with the reason each index exists, the full API table, the
+design decisions worth defending, and an honest limitations list. The required files from Section 11
+are all present: `README.md`, `capstone.yaml`, `EVIDENCE.md`, `BUILDLOG.md`, `.env.example` — plus
+`DESIGN.md` and `LICENSE`.
+
+A clean machine needs Docker and nothing else. No `.env` exists in the repository, and the stack
+boots without one:
+
+```
+$ ls -a | grep -c '^\.env$'
+  .env files: 0
+
+$ docker compose up --build
+app-1  | Server running | db ok | applied 001_init.sql | geo chain mock_a, mock_b
+app-1  | Notification worker started | max attempts 4
+
+$ docker compose exec app python -m scripts.seed
+Acme Analytics  (tenant 1)
+  API key: wpk_…
+  wgt_demo_signup      signup_form   Join the Acme beta
+  wgt_demo_contact     contact_form  Talk to us
+Globex Industrial  (tenant 2)
+  API key: wpk_…
+  wgt_demo_globex      cta           Book a Globex demo
+```
 
 ---
 
@@ -656,12 +683,12 @@ The seed creates two tenants so isolation can be tried by hand:
 ```
 $ docker compose exec -T app python seed.py
 Acme Analytics  (tenant 1)
-  API key: wpk_lJ1ATZRVf-9SQECZv7qyzLGo3Lhp3Tltlhd_iSpocEE
+  API key: wpk_…redacted…
   wgt_d164428aed89f49d  signup_form   Join the Acme beta
   wgt_b1047ac084d968b0  contact_form  Talk to us
 
 Globex Industrial  (tenant 2)
-  API key: wpk_QnpTbq0vTr1gcfTKPUns90cPTsXyKbJ0OZr_56ASJuM
+  API key: wpk_…redacted…
   wgt_afbd2a84aa174ae4  cta           Book a Globex demo
 ```
 - [x] 5 · Idempotency where it matters — the retried action happens once
@@ -685,8 +712,9 @@ The guarantee is the partial unique index, not the lookup: `ON CONFLICT DO NOTHI
 requests arriving at the same moment still produce one row, which a check-then-insert would not.
 - [x] 6 · Secrets clean — env only, hashed if stored, never logged
 
-**Stage 2.** The keys printed above are the only time they exist in the clear. The table holds
-digests:
+**Stage 2.** The keys printed above are the only time they exist in the clear (they are redacted in
+this file — see the note in [BUILDLOG.md](BUILDLOG.md) about how two of them briefly reached the
+history). The table holds digests:
 
 ```
 $ ... -c "SELECT tenant_id, label, left(key_hash, 24) || '...' AS key_hash FROM api_keys;"
@@ -696,15 +724,77 @@ $ ... -c "SELECT tenant_id, label, left(key_hash, 24) || '...' AS key_hash FROM 
          2 | seed  | 4eb7ffd36f327c58d3009b75...
 (2 rows)
 ```
-- [ ] 7 · Cost tracked, if AI is used — no AI at runtime in this system
+- [x] 7 · Cost tracked, if AI is used — no AI at runtime in this system
+
+**Not applicable, stated rather than skipped.** Nothing in the request path or the worker calls a
+model. The only outbound calls are the two geolocation lookups and the optional webhook, and both
+are free and already covered by the fallback and retry evidence above.
 
 ---
 
 ## Acceptance probes (Section 13, Layer 2)
 
-- [ ] PROBE 1 — valid submission from the second-origin page → stored, 2xx, visible in the dashboard
-- [ ] PROBE 2 — malformed and oversized payloads → clean 4xx JSON, never a 500
-- [ ] PROBE 3 — burst → 429s appear, a normal request right after still succeeds
-- [ ] PROBE 4 — provider A down → enriched by B; both down → stored anyway
-- [ ] PROBE 5 — side effect throws → submission still returns success and is stored
-- [ ] PROBE 6 — honeypot filled → submission silently dropped
+All six run against a stack brought up from nothing — `docker compose down -v` first, then
+`docker compose up --build` and the seed. The ids start at 1 because the database was empty.
+
+- [x] **PROBE 1** — valid submission from the second origin → stored, `2xx`, visible in the dashboard
+
+```
+$ curl -i -X POST .../public/submissions -H 'Origin: http://localhost:5500' -d '{...}'
+HTTP/1.1 201 Created
+access-control-allow-origin: *
+{"id":1,"status":"received"}
+
+$ curl -H "Authorization: Bearer $K" '.../api/submissions?limit=1'
+  dashboard shows: #1 probe1@example.com from Spain, Madrid
+```
+
+- [x] **PROBE 2** — malformed and oversized payloads → clean `4xx` JSON, never a `500`
+
+```
+  malformed  400 {"error":"body: not valid JSON"}
+  oversized  413 {"error":"Payload too large: limit is 8192 bytes"}
+  500s in the log: 0
+```
+
+- [x] **PROBE 3** — burst → `429`s appear, and a normal request right after still succeeds
+
+```
+  201 201 201 201 201 201 201 201 201 201 429 429 429 429 429
+  right after, a different client: 201 {"id":12,"status":"received"}
+  and the API is healthy: 200
+```
+
+- [x] **PROBE 4** — provider A down → enriched by B; both down → stored anyway
+
+```
+  A down    201  ok via mock_b -> Germany
+  both down 201  unavailable via - -> -
+```
+
+- [x] **PROBE 5** — side effect throws → the submission still returns success and is stored
+
+```
+  submission 201 in 0.051604s  {"id":16,"status":"received"}
+
+app-1  | notify: job 15 failed (RuntimeError: forced failure); attempt 1, retrying in 2s
+app-1  | notify: job 15 failed (RuntimeError: forced failure); attempt 2, retrying in 4s
+app-1  | notify: job 15 failed (RuntimeError: forced failure); attempt 3, retrying in 8s
+app-1  | ALERT notify: job 15 dead after 4 attempts (submission 16) — RuntimeError: forced failure
+
+ id | status | attempts |        email
+----+--------+----------+---------------------
+ 15 | dead   |        4 | probe5@example.com
+```
+
+The submission answered in 51 milliseconds while its notification was doomed from the first attempt.
+
+- [x] **PROBE 6** — honeypot filled → the submission is silently dropped
+
+```
+  bot    202 {"id":13,"status":"received"}
+  dashboard total: 12
+  including spam:  13
+```
+
+The bot is given the same words a person is given, and the row never reaches the owner's list.
