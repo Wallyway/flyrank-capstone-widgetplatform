@@ -8,125 +8,135 @@
   <style>
     * { box-sizing: border-box; margin: 0; }
     body {
-      font-family: var(--font); background: var(--bg); color: var(--text);
-      -webkit-font-smoothing: antialiased; padding-bottom: 80px;
+      font-family: var(--font); background: var(--canvas); color: var(--ink);
+      -webkit-font-smoothing: antialiased; padding-bottom: 96px;
     }
-    a { color: var(--accent); }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
 
+    /* Expo's nav is a plain white bar with a hairline. No blur, no material. */
     .bar {
       position: sticky; top: 0; z-index: 10;
       display: flex; align-items: center; gap: 16px;
-      padding: 14px 28px; border-bottom: 1px solid var(--border);
-      background: color-mix(in srgb, var(--bg) 72%, transparent);
-      backdrop-filter: saturate(180%) blur(20px);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      padding: 14px 28px;
+      background: var(--canvas);
+      border-bottom: 1px solid var(--hairline-strong);
     }
-    .bar h1 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    .bar h1 { font-size: 14px; font-weight: 600; }
     .bar .spacer { flex: 1; }
-    .muted { color: var(--text-2); font-size: 13px; letter-spacing: -.004em; }
+    .muted { color: var(--body); font-size: 13px; }
+    .mono { font-family: var(--mono); }
 
     .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 28px 0; }
 
+    /* Black is the primary action. Nothing else in this interface is black. */
     button {
-      font-family: inherit; font-size: 13px; font-weight: 500; letter-spacing: -.004em;
-      color: var(--text); background: var(--surface);
-      border: 1px solid var(--border); border-radius: var(--radius-xs);
-      padding: 7px 14px; cursor: pointer;
-      transition: background var(--speed) var(--ease), transform var(--speed) var(--ease);
+      font-family: inherit; font-size: 14px; font-weight: 500; line-height: 1;
+      height: 40px; padding: 0 18px; cursor: pointer;
+      color: var(--ink); background: var(--canvas);
+      border: 1px solid var(--hairline-strong); border-radius: var(--r-md);
+      transition: background var(--speed) var(--ease), border-color var(--speed) var(--ease);
     }
-    button:hover { background: var(--surface-2); transform: translateY(-1px); }
-    button:active { transform: none; }
-    button.primary { background: var(--accent); border-color: transparent; color: #fff; }
-    button.primary:hover { background: var(--accent-hover); }
-    button:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent); }
+    button:hover { background: var(--canvas-soft); }
+    button.primary {
+      background: var(--primary); border-color: var(--primary); color: #ffffff;
+    }
+    button.primary:hover { background: var(--primary-active); border-color: var(--primary-active); }
+    button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+    /* A solid edge instead of a coloured glow — this system spends no colour
+       on chrome. */
     input {
-      font-family: inherit; font-size: 15px; color: var(--text);
-      width: 100%; padding: 11px 13px;
-      background: var(--surface-2); border: 1px solid var(--border);
-      border-radius: var(--radius-xs); outline: none;
-      transition: border-color var(--speed) var(--ease), box-shadow var(--speed) var(--ease);
+      font-family: inherit; font-size: 16px; color: var(--ink);
+      width: 100%; height: 44px; padding: 0 15px;
+      background: var(--canvas); border: 1px solid var(--hairline-strong);
+      border-radius: var(--r-md); outline: none;
+      transition: border-color var(--speed) var(--ease);
     }
-    input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+    input:focus { border: 2px solid var(--ink); padding: 0 14px; }
+    input::placeholder { color: var(--muted); }
 
     /* --- the key gate ---------------------------------------------------- */
     .gate { max-width: 400px; margin: 96px auto; text-align: center; }
-    .gate h2 { font-size: 28px; font-weight: 600; letter-spacing: -.021em; }
-    .gate p { margin: 10px 0 24px; font-size: 15px; line-height: 1.47; color: var(--text-2); }
+    .gate h2 { font-size: 36px; font-weight: 600; line-height: 1.15; letter-spacing: -1.08px; }
+    .gate p { margin: 12px 0 24px; font-size: 16px; line-height: 1.5; color: var(--body); }
     .gate form { display: flex; flex-direction: column; gap: 12px; }
     .gate code {
-      font-family: var(--mono); font-size: 12px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 2px 6px;
+      font-family: var(--mono); font-size: 13px;
+      background: var(--surface-strong); border-radius: var(--r-xs); padding: 2px 6px;
     }
+    .gate button { width: 100%; }
 
     /* --- KPI row --------------------------------------------------------- */
-    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 12px; }
     .kpi {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 18px 20px; box-shadow: var(--shadow);
+      background: var(--canvas); border: 1px solid var(--hairline-strong);
+      border-radius: var(--r-lg); padding: 24px;
     }
-    .kpi .label { font-size: 12px; font-weight: 500; color: var(--text-2); letter-spacing: -.002em; }
+    /* One dark tile against a white page. The most Expo gesture there is. */
+    .kpi.feature { background: var(--surface-dark); border-color: var(--surface-dark); }
+    .kpi.feature .label { color: var(--on-dark-soft); }
+    .kpi.feature .value { color: var(--on-dark); }
+    .kpi .label {
+      font-size: 11px; font-weight: 600; line-height: 1.4;
+      letter-spacing: 0.88px; text-transform: uppercase; color: var(--body);
+    }
     .kpi .value {
-      margin-top: 6px; font-size: 32px; font-weight: 600;
-      letter-spacing: -.024em; font-variant-numeric: tabular-nums;
+      margin-top: 10px; font-size: 28px; font-weight: 600; line-height: 1.2;
+      letter-spacing: -0.84px; font-variant-numeric: tabular-nums; color: var(--ink);
     }
-    .kpi .value.dim { color: var(--text-2); }
+    .kpi .value.dim { color: var(--body); }
 
     /* --- panels ---------------------------------------------------------- */
     .panel {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); box-shadow: var(--shadow);
-      padding: 22px 24px; margin-top: 22px;
+      background: var(--canvas); border: 1px solid var(--hairline-strong);
+      border-radius: var(--r-lg); padding: 24px; margin-top: 20px;
     }
     .panel h3 {
-      font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+      font-size: 11px; font-weight: 600; line-height: 1.4;
+      letter-spacing: 0.88px; text-transform: uppercase; color: var(--body);
       display: flex; align-items: baseline; gap: 10px;
     }
-    .panel h3 span { font-size: 13px; font-weight: 400; color: var(--text-2); }
-    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .panel h3 span { letter-spacing: 0; text-transform: none; font-weight: 400; font-size: 13px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 800px) { .cols { grid-template-columns: 1fr; } }
     .cols .panel { margin-top: 0; }
 
     /* --- chart ----------------------------------------------------------- */
-    .chart { margin-top: 18px; width: 100%; height: 132px; display: block; overflow: visible; }
-    .chart rect { fill: var(--accent); transition: opacity var(--speed) var(--ease); }
-    .chart rect:hover { opacity: .75; }
-    .chart text { fill: var(--text-2); font-size: 10px; }
+    .chart { margin-top: 20px; width: 100%; height: 132px; display: block; overflow: visible; }
+    .chart rect { fill: var(--ink); transition: opacity var(--speed) var(--ease); }
+    .chart rect:hover { opacity: .6; }
+    .chart text { fill: var(--muted); font-size: 10px; }
 
     /* --- ranked lists ---------------------------------------------------- */
-    .rank { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .rank { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: baseline; }
-    .row .name { font-size: 14px; letter-spacing: -.006em; }
-    .row .name small { display: block; color: var(--text-2); font-size: 12px; margin-top: 2px; }
-    .row .count { font-size: 14px; font-variant-numeric: tabular-nums; color: var(--text-2); }
-    .track { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
-    .track i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+    .row .name { font-size: 14px; font-weight: 500; color: var(--ink); }
+    .row .name small { display: block; color: var(--body); font-size: 13px; font-weight: 400; margin-top: 3px; }
+    .row .count { font-size: 14px; font-variant-numeric: tabular-nums; color: var(--body); }
+    .track { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--surface-strong); overflow: hidden; }
+    .track i { display: block; height: 100%; background: var(--ink); border-radius: 2px; }
 
     /* --- table ----------------------------------------------------------- */
-    .scroll { overflow-x: auto; margin-top: 6px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .scroll { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th {
-      text-align: left; font-weight: 500; color: var(--text-2);
-      padding: 12px 12px 12px 0; border-bottom: 1px solid var(--border); white-space: nowrap;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.88px; text-transform: uppercase;
+      text-align: left; color: var(--body);
+      padding: 12px 12px 12px 0; border-bottom: 1px solid var(--hairline-strong); white-space: nowrap;
     }
-    td { padding: 13px 12px 13px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+    td { padding: 14px 12px 14px 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
     tr:last-child td { border-bottom: 0; }
-    td .sub { color: var(--text-2); font-size: 12px; margin-top: 3px; }
+    tbody tr:hover td { background: var(--canvas-soft); }
+    td .sub { color: var(--body); font-size: 13px; margin-top: 3px; }
     .pill {
-      display: inline-block; padding: 2px 8px; border-radius: 999px;
-      font-size: 11px; font-weight: 500; background: var(--surface-2); color: var(--text-2);
-      border: 1px solid var(--border); white-space: nowrap;
+      display: inline-block; padding: 4px 10px; border-radius: var(--r-pill);
+      font-family: var(--mono); font-size: 11px;
+      background: var(--surface-strong); color: var(--ink); white-space: nowrap;
     }
-    .empty { padding: 40px 0; text-align: center; color: var(--text-2); font-size: 14px; }
-    .error { color: var(--danger); font-size: 13px; }
-
-    .skeleton {
-      background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%);
-      background-size: 400% 100%; animation: shimmer 1.4s ease infinite;
-      border-radius: 6px; color: transparent;
-    }
-    @keyframes shimmer { 0% { background-position: 100% 0 } 100% { background-position: 0 0 } }
+    .empty { padding: 40px 0; text-align: center; color: var(--body); font-size: 14px; }
+    .error { color: var(--ink); font-size: 13px; border-left: 2px solid var(--error-line); padding-left: 10px; }
+    .error:empty { display: none; }
   </style>
 </head>
 <body>
@@ -216,14 +226,14 @@
 
   function kpis(overview) {
     var cards = [
-      { label: "Total leads", value: fmt(overview.total) },
+      { label: "Total leads", value: fmt(overview.total), feature: true },
       { label: "Last 7 days", value: fmt(overview.last_7_days) },
       { label: "Last 24 hours", value: fmt(overview.last_24_hours) },
       { label: "Spam blocked", value: fmt(overview.spam_blocked), dim: true },
       { label: "Located", value: overview.enriched_percent + "%", dim: true }
     ];
     el("kpis").innerHTML = cards.map(function (c) {
-      return '<div class="kpi"><div class="label">' + c.label + '</div>' +
+      return '<div class="kpi' + (c.feature ? " feature" : "") + '"><div class="label">' + c.label + "</div>" +
              '<div class="value' + (c.dim ? " dim" : "") + '">' + c.value + "</div></div>";
     }).join("");
   }
@@ -240,7 +250,7 @@
       var x = i * (barWidth + gap);
       var label = d.day.slice(5);
       return '<rect x="' + x.toFixed(1) + '" y="' + (height - 18 - h) + '" width="' + barWidth.toFixed(1) +
-             '" height="' + h + '" rx="3" opacity="' + (d.total ? 1 : 0.28) + '"><title>' +
+             '" height="' + h + '" rx="3" opacity="' + (d.total ? 1 : 0.12) + '"><title>' +
              label + " · " + d.total + '</title></rect>' +
              (series.length <= 16 || i % 3 === 0
                ? '<text x="' + (x + barWidth / 2).toFixed(1) + '" y="' + (height - 4) + '" text-anchor="middle">' + label + "</text>"

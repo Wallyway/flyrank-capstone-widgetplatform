@@ -4,71 +4,76 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Northwind Coffee</title>
+  <link rel="stylesheet" href="http://localhost:8000/static/design-tokens.css">
   <style>
-    /* This is a pretend customer's website. It has its own look and knows
-       nothing about the platform beyond one <script> tag. */
-    :root {
-      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, system-ui, sans-serif;
-      --bg: #f5f5f7; --surface: #fff; --text: #1d1d1f; --text-2: #6e6e73;
-      --border: rgba(0,0,0,.10); --accent: #7a4a2b;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #000; --surface: #1c1c1e; --text: #f5f5f7; --text-2: #98989d;
-        --border: rgba(255,255,255,.12); --accent: #d9a37a;
-      }
-    }
-
+    /* A pretend customer's website. It knows nothing about the platform beyond
+       one <script> tag — and it happens to be built on the same design tokens,
+       which is how a page this clean can still fail to touch the widget. */
     * { box-sizing: border-box; margin: 0; }
     body {
-      font-family: var(--font); background: var(--bg); color: var(--text);
+      font-family: var(--font); background: var(--canvas); color: var(--ink);
       -webkit-font-smoothing: antialiased;
     }
     .bar {
       position: sticky; top: 0; z-index: 10;
-      backdrop-filter: saturate(180%) blur(20px);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
-      background: color-mix(in srgb, var(--bg) 72%, transparent);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 24px; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
+      background: var(--canvas); border-bottom: 1px solid var(--hairline-strong);
+      padding: 14px 0; font-size: 14px; font-weight: 600;
     }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
-    .hero { padding: 88px 0 56px; text-align: center; }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    /* Expo's hero signature: a sky wash behind a very large, very tight line. */
+    .hero {
+      background: linear-gradient(180deg, var(--sky-light) 0%, var(--sky-mid) 42%, var(--canvas) 100%);
+      padding: 96px 0 72px; text-align: center;
+    }
     .hero h1 {
-      font-size: 56px; font-weight: 600; line-height: 1.06; letter-spacing: -.028em;
+      font-size: 64px; font-weight: 600; line-height: 1.05; letter-spacing: -1.92px;
     }
     .hero p {
-      margin: 18px auto 0; max-width: 560px;
-      font-size: 19px; line-height: 1.5; letter-spacing: -.01em; color: var(--text-2);
+      margin: 20px auto 0; max-width: 560px;
+      font-size: 18px; line-height: 1.5; color: var(--body);
     }
+    @media (max-width: 760px) { .hero h1 { font-size: 40px; letter-spacing: -1.2px; } }
+
     .split {
       display: grid; grid-template-columns: 1fr 400px; gap: 48px; align-items: start;
-      padding: 24px 0 80px;
+      padding: 48px 0 96px;
     }
-    @media (max-width: 860px) { .split { grid-template-columns: 1fr; } .hero h1 { font-size: 40px; } }
-    h2 { font-size: 28px; font-weight: 600; letter-spacing: -.021em; }
-    .lede { margin-top: 12px; font-size: 16px; line-height: 1.6; color: var(--text-2); }
-    .facts { margin-top: 28px; display: grid; gap: 14px; }
+    @media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+
+    h2 { font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: -0.84px; }
+    .lede { margin-top: 12px; font-size: 16px; line-height: 1.5; color: var(--body); }
+
+    .facts { margin-top: 32px; display: grid; gap: 12px; }
     .fact {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-      padding: 16px 18px;
+      background: var(--canvas); border: 1px solid var(--hairline-strong);
+      border-radius: var(--r-lg); padding: 20px 24px;
     }
-    .fact b { font-size: 15px; letter-spacing: -.008em; }
-    .fact span { display: block; margin-top: 4px; font-size: 14px; color: var(--text-2); }
+    .fact b { font-size: 16px; font-weight: 600; }
+    .fact span { display: block; margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--body); }
+
+    /* A near-black code block is the other half of the Expo texture. */
+    .snippet {
+      margin-top: 32px; background: var(--surface-dark); color: var(--on-dark);
+      border-radius: var(--r-lg); padding: 20px; overflow-x: auto;
+    }
+    .snippet .caption-up { color: var(--on-dark-soft); display: block; margin-bottom: 12px; }
+    .snippet code { font-family: var(--mono); font-size: 13px; line-height: 1.5; white-space: pre; }
 
     .proof {
-      border-top: 1px solid var(--border); padding: 40px 0 96px;
-      font-size: 14px; line-height: 1.6; color: var(--text-2);
+      border-top: 1px solid var(--hairline-strong); padding: 40px 0 96px;
+      font-size: 14px; line-height: 1.6; color: var(--body);
     }
+    .proof strong { color: var(--ink); }
     .proof code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; padding: 1px 5px;
+      font-family: var(--mono); font-size: 13px;
+      background: var(--surface-strong); color: var(--ink);
+      border-radius: var(--r-xs); padding: 2px 6px;
     }
 
     /* Deliberately hostile. If the widget were not inside a shadow root, every
        one of its inputs and its button would be wearing this. The bare input
-       below is left exposed so you can see the rules really do fire. */
+       further down is left exposed so you can see the rules really do fire. */
     input, textarea, select {
       background: #ffe9e9 !important; border: 3px dashed red !important;
       padding: 10px !important; border-radius: 0 !important; font-size: 16px;
@@ -77,24 +82,32 @@
   </style>
 </head>
 <body>
-  <div class="bar"><div class="wrap" style="padding:0">Northwind Coffee</div></div>
+  <div class="bar"><div class="wrap">Northwind Coffee</div></div>
 
-  <div class="wrap">
-    <section class="hero">
+  <section class="hero">
+    <div class="wrap">
       <h1>Roasted the morning<br>it ships.</h1>
       <p>Single-origin beans from four farms, roasted in small batches in Oakland
          and sent out the same day.</p>
-    </section>
+    </div>
+  </section>
 
+  <div class="wrap">
     <section class="split">
       <div>
         <h2>The Thursday letter</h2>
         <p class="lede">One email a week: what we roasted, what it tasted like, and
            where the beans came from. No offers, no tracking pixels.</p>
+
         <div class="facts">
           <div class="fact"><b>Roasted to order</b><span>Nothing sits on a shelf for more than 48 hours.</span></div>
           <div class="fact"><b>Four farms</b><span>Direct trade, named growers, published prices.</span></div>
           <div class="fact"><b>Leave any time</b><span>One click, no questions, no win-back email.</span></div>
+        </div>
+
+        <div class="snippet">
+          <span class="caption-up">All it took</span>
+          <code>&lt;script src="http://localhost:8000/widget.js?id=wgt_demo_signup" async&gt;&lt;/script&gt;</code>
         </div>
       </div>
 
@@ -113,7 +126,7 @@
          declares <code>input { background:#ffe9e9 !important; border:3px dashed red !important }</code>
          and <code>button { background:red !important }</code>. The signup widget above
          is untouched by it, because it lives in a shadow root. This input is not:</p>
-      <p style="margin-top:14px"><input type="text" placeholder="an unprotected input, for comparison"></p>
+      <p style="margin-top:16px"><input type="text" placeholder="an unprotected input, for comparison"></p>
     </section>
   </div>
 

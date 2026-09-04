@@ -3,108 +3,135 @@
 
   // Everything renders inside a shadow root. The host page's CSS cannot reach
   // in and ours cannot leak out, which is the only way a widget looks the same
-  // on a site nobody here controls. The tokens below mirror design-tokens.css;
-  // they are inlined because a shadow root inherits no stylesheet.
+  // on a site nobody here controls. The tokens mirror design-tokens.css; they
+  // are inlined because a shadow root inherits no stylesheet.
+  //
+  // No @font-face here on purpose. Inter is asked for and used if the visitor
+  // already has it, but this bundle never makes a customer's page download a
+  // font — 70 KB on someone else's site is how a widget gets removed.
   var STYLE = `
   :host {
     all: initial;
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, system-ui, sans-serif;
-    --bg: #ffffff; --sunken: #f5f5f7;
-    --text: #1d1d1f; --text-2: #6e6e73;
-    --border: rgba(0,0,0,.10); --border-strong: rgba(0,0,0,.18);
-    --accent: #0071e3; --accent-hover: #0077ed;
-    --danger: #ff3b30; --success: #30d158;
-    --shadow: 0 4px 24px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-    --shadow-lg: 0 12px 48px rgba(0,0,0,.14);
+    --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --canvas: #ffffff;
+    --surface-strong: #f0f0f3;
+    --ink: #171717;
+    --body: #60646c;
+    --muted: #999999;
+    --hairline: #f0f0f3;
+    --hairline-strong: #dcdee0;
+    --primary: #000000;
+    --primary-active: #1a1a1a;
+    --on-primary: #ffffff;
+    --success: #16a34a;
+    --error-line: #eb8e90;
+    --shadow-card: 0 4px 12px rgba(0,0,0,.04);
     --ease: cubic-bezier(.32,.72,0,1);
     display: block;
     font-family: var(--font);
-    color: var(--text);
+    color: var(--ink);
     -webkit-font-smoothing: antialiased;
   }
+
+  /* Dark is a surface, not a theme. It exists because this widget can land on
+     a dark page, and there the CTA inverts: black on #171717 would vanish. */
   :host([data-theme="dark"]) {
-    --bg: #1c1c1e; --sunken: #2c2c2e;
-    --text: #f5f5f7; --text-2: #98989d;
-    --border: rgba(255,255,255,.12); --border-strong: rgba(255,255,255,.22);
-    --shadow: 0 4px 24px rgba(0,0,0,.5);
-    --shadow-lg: 0 12px 48px rgba(0,0,0,.6);
+    --canvas: #171717;
+    --surface-strong: #1a1a1a;
+    --ink: #ffffff;
+    --body: #b0b4ba;
+    --muted: #b0b4ba;
+    --hairline: rgba(255,255,255,.10);
+    --hairline-strong: rgba(255,255,255,.16);
+    --primary: #ffffff;
+    --primary-active: #f0f0f3;
+    --on-primary: #171717;
+    --shadow-card: 0 4px 12px rgba(0,0,0,.4);
   }
 
   * { box-sizing: border-box; margin: 0; font-family: inherit; }
 
+  /* Flat, separated by a hairline rather than a shadow. */
   .card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    box-shadow: var(--shadow);
-    padding: 28px;
+    background: var(--canvas);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 12px;
+    padding: 24px;
     max-width: 400px;
+    transition: box-shadow var(--ease) 200ms;
   }
+  .card:hover { box-shadow: var(--shadow-card); }
 
   .title {
-    font-size: 24px; font-weight: 600; line-height: 1.16;
-    letter-spacing: -0.021em; color: var(--text);
+    font-size: 22px; font-weight: 600; line-height: 1.25;
+    letter-spacing: -0.5px; color: var(--ink);
   }
   .description {
-    margin-top: 8px; font-size: 15px; line-height: 1.47;
-    letter-spacing: -0.008em; color: var(--text-2);
+    margin-top: 8px; font-size: 16px; line-height: 1.5; color: var(--body);
   }
 
-  form { margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
+  form { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
-  .label {
-    font-size: 13px; font-weight: 500; letter-spacing: -0.004em; color: var(--text-2);
-  }
-  .req { color: var(--text-2); opacity: .6; }
+  .label { font-size: 14px; font-weight: 500; color: var(--body); }
+  .req { color: var(--muted); }
 
   input, textarea, select {
-    width: 100%; padding: 11px 13px;
-    font-size: 15px; letter-spacing: -0.008em; color: var(--text);
-    background: var(--sunken);
-    border: 1px solid transparent;
-    border-radius: 10px;
+    width: 100%; height: 44px; padding: 0 14px;
+    font-size: 16px; color: var(--ink);
+    background: var(--canvas);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 8px;
     outline: none;
-    transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease), background 200ms var(--ease);
+    transition: border-color 200ms var(--ease);
     -webkit-appearance: none; appearance: none;
   }
-  textarea { min-height: 92px; resize: vertical; line-height: 1.47; }
+  textarea { height: auto; min-height: 96px; padding: 12px 14px; resize: vertical; line-height: 1.5; }
   select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%236e6e73' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 13px center;
-    padding-right: 34px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%2360646c' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
+    padding-right: 36px;
   }
-  input::placeholder, textarea::placeholder { color: var(--text-2); opacity: .7; }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
 
-  /* The focus ring is accessibility, not decoration: it never gets removed. */
+  /* A checkbox is not a text box and must not inherit its size. */
+  input[type="checkbox"] {
+    width: 20px; height: 20px; padding: 0; align-self: flex-start;
+    accent-color: var(--primary); -webkit-appearance: auto; appearance: auto;
+    border: 0;
+  }
+
+  /* A solid two-pixel edge rather than a coloured glow: this system spends no
+     colour on chrome. Still unmistakably focused, still accessible. */
   input:focus, textarea:focus, select:focus {
-    background: var(--bg);
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+    border: 2px solid var(--ink);
+    padding-left: 13px;
   }
+  textarea:focus { padding: 11px 13px; }
   .field.invalid input, .field.invalid textarea, .field.invalid select {
-    border-color: var(--danger);
+    border-color: var(--error-line);
   }
-  .hint { font-size: 12px; color: var(--danger); letter-spacing: -0.004em; }
 
   button {
-    margin-top: 4px; height: 46px; width: 100%;
-    font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
-    color: #fff; background: var(--accent);
-    border: 0; border-radius: 12px; cursor: pointer;
-    transition: background 200ms var(--ease), transform 200ms var(--ease), opacity 200ms var(--ease);
+    margin-top: 4px; height: 40px; width: 100%;
+    font-size: 14px; font-weight: 500;
+    color: var(--on-primary); background: var(--primary);
+    border: 0; border-radius: 8px; cursor: pointer;
+    transition: background 200ms var(--ease);
   }
-  button:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
-  button:active:not(:disabled) { transform: translateY(0) scale(.99); }
-  button:focus-visible { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); }
-  button:disabled { opacity: .55; cursor: default; }
+  button:hover:not(:disabled) { background: var(--primary-active); }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  button:disabled { opacity: .5; cursor: default; }
 
+  /* Expo's error token is a light rose. It carries the border, and the message
+     itself stays in ink so it clears AA contrast on white. */
   .error {
-    font-size: 13px; line-height: 1.4; color: var(--danger);
-    letter-spacing: -0.004em;
+    font-size: 13px; line-height: 1.4; color: var(--ink);
+    border-left: 2px solid var(--error-line); padding-left: 10px;
   }
+  .error:empty { display: none; }
 
-  /* The honeypot sits off-screen rather than display:none — some bots skip
-     hidden inputs but happily fill a positioned one. Never read aloud. */
+  /* Off-screen rather than display:none — some bots skip hidden inputs but
+     happily fill a positioned one. Never read aloud. */
   .trap {
     position: absolute; left: -9999px; top: auto;
     width: 1px; height: 1px; overflow: hidden;
@@ -112,43 +139,39 @@
 
   .done { text-align: center; padding: 8px 0 4px; }
   .check {
-    width: 46px; height: 46px; margin: 0 auto 16px;
+    width: 44px; height: 44px; margin: 0 auto 16px;
     border-radius: 50%; background: var(--success);
     display: flex; align-items: center; justify-content: center;
     animation: pop 420ms var(--ease) both;
   }
-  .done .title { font-size: 19px; }
+  .done .title { font-size: 18px; letter-spacing: 0; }
   @keyframes pop { from { transform: scale(.7); opacity: 0 } to { transform: scale(1); opacity: 1 } }
   @keyframes rise { from { transform: translateY(10px); opacity: 0 } to { transform: none; opacity: 1 } }
 
-  /* Popover layout: a floating pill that opens a panel. */
+  /* Popover layout: a black pill that opens a panel. */
   .launcher {
     position: fixed; right: 24px; bottom: 24px; z-index: 2147483000;
-    height: 48px; width: auto; padding: 0 20px;
-    display: inline-flex; align-items: center; gap: 8px;
-    box-shadow: var(--shadow-lg);
+    height: 40px; width: auto; padding: 0 18px; margin: 0;
+    display: inline-flex; align-items: center;
+    box-shadow: var(--shadow-card);
   }
   .panel {
-    position: fixed; right: 24px; bottom: 84px; z-index: 2147483000;
+    position: fixed; right: 24px; bottom: 76px; z-index: 2147483000;
     width: 360px; max-width: calc(100vw - 48px);
     max-height: calc(100vh - 120px); overflow: auto;
-    box-shadow: var(--shadow-lg);
     animation: rise 320ms var(--ease) both;
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
+  .panel .card { position: relative; box-shadow: var(--shadow-card); }
   .close {
-    position: absolute; top: 14px; right: 14px;
+    position: absolute; top: 16px; right: 16px;
     height: 28px; width: 28px; margin: 0; padding: 0;
-    border-radius: 50%; background: var(--sunken); color: var(--text-2);
-    font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 9999px; background: var(--surface-strong); color: var(--body);
+    font-size: 15px; line-height: 1; display: flex; align-items: center; justify-content: center;
   }
-  .close:hover:not(:disabled) { background: var(--border); transform: none; }
-  .panel .card { border-radius: 20px; position: relative; }
+  .close:hover:not(:disabled) { background: var(--hairline-strong); }
 
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-    button:hover:not(:disabled) { transform: none; }
   }
   `;
 

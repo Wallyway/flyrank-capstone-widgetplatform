@@ -108,7 +108,7 @@ app/
 │   └── tenants.py  widgets.py  submissions.py  notifications.py  stats.py
 ├── middleware/     cors.py (public paths only) · body_limit.py
 ├── core/           db pool + migration runner · ids/hashing · error handlers
-├── static/         widget.v1.js · design-tokens.css · dashboard.html
+├── static/         widget.v1.js · design-tokens.css · dashboard.html · fonts/
 └── config.py       every environment variable, one place
 migrations/         numbered SQL, applied once and recorded
 scripts/seed.py     demo data
@@ -227,6 +227,20 @@ check-then-insert would not.
 **404 rather than 403 across tenants.** A `403` confirms the id exists. In a multi-tenant system
 that is a small information leak with no upside.
 
+**The interface is monochromatic on purpose.** The visual identity follows Expo's design system:
+white canvas, `#171717` ink, and colour almost entirely absent from the chrome. Black `#000000` is
+reserved for the primary action and nothing else; blue `#0d74ce` is reserved for a link inside a
+sentence and nothing else. Focus is a solid 2px edge rather than a coloured glow, cards are flat and
+separated by a `#dcdee0` hairline rather than a shadow, and the one near-black surface is used as
+contrast — the dashboard's headline tile, the landing's code block — never as a dark theme. One
+stylesheet of tokens, `app/static/design-tokens.css`, is the only place those values exist.
+
+**Inter and JetBrains Mono are self-hosted, and the widget downloads neither.** They are served from
+`/static/fonts/` with a one-year immutable cache, the same way expo.dev serves its own — no third
+party learns who loads a page. The embedded widget is deliberately excluded: it asks for Inter in
+its font stack and uses it if the visitor already has it, but it never makes a customer's page
+download 70 KB of font. Section 4.3 grades small payloads, and a slow widget is a removed widget.
+
 ---
 
 ## Limitations — the honest list
@@ -248,6 +262,16 @@ that is a small information leak with no upside.
   ownership would want a login, short-lived tokens and key rotation.
 - **`geo_status` for a private address is `skipped_private_ip`.** Submissions from localhost are
   never located, which is why the mock providers exist for the demo.
+- **The widget's typography is not guaranteed.** It asks for Inter without shipping it, so on a
+  machine that does not have Inter installed the widget falls back to the system stack while the
+  dashboard shows real Inter. That is a deliberate trade: correct-looking beats fast-loading only
+  until you are a guest on someone else's page.
+- **One design token is overridden for contrast.** Expo's `error` token is `#eb8e90`, a light rose
+  that fails AA as body text on white. It carries the error border here, and the message itself
+  stays in `#171717`. Fidelity to a palette is not a reason to make text hard to read.
+- **The demo landing links the platform's stylesheet.** A real customer site would not; it does so
+  here to show the identity end to end, which means it also depends on the API being up to look
+  right. The widget's isolation does not depend on this and is proven separately.
 - **No AI is used at runtime**, so the shared requirement about tracking per-call AI cost does not
   apply to this system. It is listed here rather than quietly skipped.
 

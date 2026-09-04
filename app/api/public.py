@@ -58,6 +58,28 @@ def widget_bundle(version: str):
     )
 
 
+# An allowlist, not a lookup: the filename never comes from the request, so
+# there is nothing here to traverse out of.
+FONTS = {
+    "inter-latin.woff2": "font/woff2",
+    "jetbrains-mono-latin.woff2": "font/woff2",
+}
+
+
+@router.api_route("/static/fonts/{filename}", methods=["GET", "HEAD"], summary="Self-hosted webfonts")
+def font_file(filename: str):
+    media_type = FONTS.get(filename)
+    if media_type is None:
+        raise HTTPException(status_code=404, detail="Unknown font")
+    return Response(
+        content=(STATIC_DIR / "fonts" / filename).read_bytes(),
+        media_type=media_type,
+        # A font file's contents never change under its name, so it gets the
+        # same one-year immutable cache the versioned bundle gets.
+        headers={"Cache-Control": f"public, max-age={config.BUNDLE_MAX_AGE}, immutable"},
+    )
+
+
 @router.api_route("/static/design-tokens.css", methods=["GET", "HEAD"], summary="The shared design tokens")
 def design_tokens():
     path = STATIC_DIR / "design-tokens.css"

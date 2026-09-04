@@ -218,6 +218,58 @@ widget.v1.js parses cleanly
 Two widgets on one page share a single bundle download: the loader queues its mount request and only
 the first one injects the script.
 
+**Stage 12.** The interface layer was repainted in Expo's visual identity. No requirement changed —
+this block exists to show the caching and payload claims still hold afterwards.
+
+```
+$ curl -sI http://localhost:8000/static/widget.v1.js
+cache-control: public, max-age=31536000, immutable
+content-length: 14038          # budget was 20480
+
+$ node --check widget.v1.js
+  widget.v1.js parses cleanly
+```
+
+Inter and JetBrains Mono are self-hosted and served from our own origin with the same one-year
+immutable cache as the bundle. Fonts are fetched in CORS mode, so the `Access-Control-Allow-Origin`
+below is what stops the browser discarding them in silence:
+
+```
+$ curl -sI -H 'Origin: http://localhost:5500' .../static/fonts/inter-latin.woff2
+HTTP/1.1 200 OK  cache-control: public, max-age=31536000, immutable
+content-length: 48432  content-type: font/woff2  access-control-allow-origin: *
+
+$ ... jetbrains-mono-latin.woff2
+HTTP/1.1 200 OK  content-length: 21212  content-type: font/woff2
+```
+
+The filename is matched against an allowlist rather than joined onto a path, so neither a traversal
+nor an unknown name reaches the filesystem:
+
+```
+  /static/fonts/../../main.py   404 {"error":"Not Found"}
+  /static/fonts/evil.woff2      404 {"error":"Unknown font"}
+```
+
+The widget itself downloads **no** font: 70 KB on a customer's page is exactly the cost that gets a
+widget removed. It asks for Inter in its font stack and falls back to the system one.
+
+The suite and the probes were re-run afterwards to confirm the repaint touched nothing behind the
+interface:
+
+```
+$ docker compose exec -T app python -m pytest -q
+  50 passed, 2 warnings in 0.82s
+
+  P1 valid submission   201 {"id":63,"status":"received"}
+  P2 malformed          400 {"error":"body: not valid JSON"}
+  P2 oversized          413 {"error":"Payload too large: limit is 8192 bytes"}
+  P3 burst              10 x201, 3 x429
+  P3 still serving      200
+  P6 honeypot           202 {"id":74,"status":"received"}
+  preflight             204
+```
+
 ## Public submission API
 
 - [x] Cross-origin submissions work: CORS headers correct, preflight (`OPTIONS`) handled.

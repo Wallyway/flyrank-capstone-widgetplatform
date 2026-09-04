@@ -119,6 +119,50 @@ honeypot that only stops naive bots, an "email" that is a log line, and a dashbo
 session. All of them are choices with a reason, and all of them would need to change before this
 served anyone's traffic for money.
 
+## Stage 12 — the Expo repaint
+
+The brief for this one was "make the visual identity closer to Expo", with a link to a design-system
+breakdown. That link turned out to be a client-rendered app: 115 KB of HTML with zero hex values in
+it, so neither fetching it nor reading its markup produced a single token. I said so rather than
+inventing plausible ones, took the specification from two other references that agree with each
+other token for token, and then validated the parts that matter against expo.dev's own HTML — which
+is where I confirmed they self-host `inter-latin.woff2` and `jetbrains-mono-latin.woff2` from their
+own domain rather than using Google Fonts.
+
+What I took literally: the palette (canvas `#ffffff`, ink `#171717`, body `#60646c`, hairline
+`#dcdee0`), the rule that black is only ever a primary action and blue is only ever a link inside a
+sentence, the radius scale (8 for buttons and inputs, 12 for cards, pill for badges), flat surfaces
+with a hairline instead of a shadow, and display type at weight 600 with heavy negative tracking.
+The dashboard's headline number sits on a `#171717` tile, which is the single most recognisable move
+in that system.
+
+**Two deliberate deviations, both argued rather than assumed.**
+
+The first is the widget's dark mode. Expo has no dark theme — its dark surfaces are contrast, not a
+setting — so the dashboard and the landing are light-only now. But the widget is embedded on pages
+nobody here controls, and a white card on a dark blog reads as broken, so it keeps its `theme`
+option. Its dark variant uses Expo's own `#171717`, and the CTA inverts to white, because black on
+`#171717` would be invisible.
+
+The second is the error colour. Expo's `error` token is `#eb8e90`, which does not clear AA contrast
+as body text on white. It carries the border; the message stays in ink. Matching a palette is not a
+reason to make an error message hard to read.
+
+**The decision I spent longest on** was the font. Inter is what makes this look like Expo at all,
+and self-hosting it is what Expo does. But the widget lands on other people's pages, where Section
+4.3 grades payload size and where 70 KB of font is exactly the cost that gets a widget deleted. So
+the fonts are self-hosted and used on our own two pages, and the widget asks for Inter in its stack
+without ever shipping it. It looks slightly different on a machine without Inter installed, and that
+is written down in the README's limitations rather than hidden.
+
+A detail that would have been a silent failure: fonts are fetched in CORS mode even from your own
+origin's stylesheet. `/static/` was already in the CORS middleware's public prefixes, so it worked —
+but had it not, the browser would have downloaded the file and then discarded it without an error.
+
+I also fixed a bug I had shipped in Stage 4b while I was in there: the widget's checkbox inputs
+inherited `width: 100%; height: 44px` from the text-input rule, which makes a checkbox a large grey
+slab. No test caught it because no test looks at CSS.
+
 ## A mistake worth writing down
 
 In Stage 2 I pasted the seed's output straight into `EVIDENCE.md`, and the seed prints API keys. Two

@@ -1,60 +1,97 @@
 /* The single source of truth for how this platform looks.
-   The dashboard links this file; the widget bundle carries the same values
-   inlined, because a widget in a shadow root cannot inherit a stylesheet. */
+   The dashboard and the test site link this file; the widget bundle carries the
+   same values inlined, because a shadow root inherits no stylesheet.
+
+   Names follow the Expo design system so the two can be compared at a glance. */
+
+/* Self-hosted, same as expo.dev does — no third party sees who loads a page. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/static/fonts/inter-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/jetbrains-mono-latin.woff2") format("woff2");
+}
 
 :root {
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, system-ui, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --surface-2: #fbfbfd;
-  --text: #1d1d1f;
-  --text-2: #6e6e73;
-  --border: rgba(0, 0, 0, 0.10);
-  --border-strong: rgba(0, 0, 0, 0.18);
+  /* Surface — the whole system lives on white, with one soft band to separate
+     sections and one near-black surface used for contrast, never as a theme. */
+  --canvas: #ffffff;
+  --canvas-soft: #fafafa;
+  --surface-strong: #f0f0f3;
+  --surface-dark: #171717;
+  --surface-dark-elevated: #1a1a1a;
 
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
-  --danger: #ff3b30;
-  --success: #30d158;
-  --warning: #ff9f0a;
+  --ink: #171717;
+  --body: #60646c;
+  --muted: #999999;
+  --muted-soft: #cccccc;
+  --on-dark: #ffffff;
+  --on-dark-soft: #b0b4ba;
 
-  --radius-xs: 10px;
-  --radius-sm: 14px;
-  --radius: 20px;
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.12);
+  --hairline: #f0f0f3;
+  --hairline-soft: #f5f5f7;
+  --hairline-strong: #dcdee0;
+
+  /* Black is for the primary action and nothing else. Blue is for a link in a
+     sentence and nothing else. That restraint is the whole look. */
+  --primary: #000000;
+  --primary-active: #1a1a1a;
+  --link: #0d74ce;
+  --accent-preview: #8145b5;
+
+  --success: #16a34a;
+  --warning: #ab6400;
+  --error-line: #eb8e90;
+
+  --sky-light: #cfe7ff;
+  --sky-mid: #a8c8e8;
+
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-pill: 9999px;
+
+  /* Base unit 4px, section rhythm tops out at 96px. */
+  --s-xxs: 4px;  --s-xs: 8px;   --s-sm: 12px;  --s-base: 16px;
+  --s-md: 20px;  --s-lg: 24px;  --s-xl: 32px;  --s-xxl: 48px;
+  --s-section: 96px;
+
+  /* Cards sit flat and are separated by a hairline. The one shadow that exists
+     appears on hover. */
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.04);
 
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --speed: 260ms;
+  --speed: 200ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --surface-2: #2c2c2e;
-    --text: #f5f5f7;
-    --text-2: #98989d;
-    --border: rgba(255, 255, 255, 0.12);
-    --border-strong: rgba(255, 255, 255, 0.22);
-    --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.6);
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg: #000000;
-  --surface: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --text: #f5f5f7;
-  --text-2: #98989d;
-  --border: rgba(255, 255, 255, 0.12);
-  --border-strong: rgba(255, 255, 255, 0.22);
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.6);
-}
+/* Type scale. Display sizes carry aggressive negative tracking and stop at
+   weight 600 — nothing in this system is bolder than that. */
+.display-mega { font-size: 64px; font-weight: 600; line-height: 1.05; letter-spacing: -1.92px; }
+.display-xl   { font-size: 48px; font-weight: 600; line-height: 1.10; letter-spacing: -1.44px; }
+.display-lg   { font-size: 36px; font-weight: 600; line-height: 1.15; letter-spacing: -1.08px; }
+.display-md   { font-size: 28px; font-weight: 600; line-height: 1.20; letter-spacing: -0.84px; }
+.display-sm   { font-size: 22px; font-weight: 600; line-height: 1.25; letter-spacing: -0.5px; }
+.title-md     { font-size: 18px; font-weight: 600; line-height: 1.4; }
+.title-sm     { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.body-md      { font-size: 16px; font-weight: 400; line-height: 1.5; }
+.body-sm      { font-size: 14px; font-weight: 400; line-height: 1.5; }
+.caption      { font-size: 13px; font-weight: 400; line-height: 1.4; }
+.caption-up   { font-size: 11px; font-weight: 600; line-height: 1.4; letter-spacing: 0.88px; text-transform: uppercase; }
+.code         { font-family: var(--mono); font-size: 13px; font-weight: 400; line-height: 1.5; }
 
 /* Motion is decoration. Anyone who asked for less gets none. */
 @media (prefers-reduced-motion: reduce) {
