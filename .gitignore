@@ -6,3 +6,6 @@ __pycache__/
 .pytest_cache/
 logs/
 .DS_Store
+
+# The logo master. Derivatives live in app/static/brand/.
+logo.jpg

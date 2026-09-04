@@ -108,7 +108,7 @@ app/
 │   └── tenants.py  widgets.py  submissions.py  notifications.py  stats.py
 ├── middleware/     cors.py (public paths only) · body_limit.py
 ├── core/           db pool + migration runner · ids/hashing · error handlers
-├── static/         widget.v1.js · design-tokens.css · dashboard.html · fonts/
+├── static/         widget.v1.js · design-tokens.css · dashboard.html · fonts/ · brand/
 └── config.py       every environment variable, one place
 migrations/         numbered SQL, applied once and recorded
 scripts/seed.py     demo data

@@ -80,6 +80,21 @@ def font_file(filename: str):
     )
 
 
+BRAND = {f"icon-{px}.png": "image/png" for px in (512, 180, 48, 32, 16)}
+
+
+@router.api_route("/static/brand/{filename}", methods=["GET", "HEAD"], summary="The logo, at the sizes a browser asks for")
+def brand_asset(filename: str):
+    media_type = BRAND.get(filename)
+    if media_type is None:
+        raise HTTPException(status_code=404, detail="Unknown brand asset")
+    return Response(
+        content=(STATIC_DIR / "brand" / filename).read_bytes(),
+        media_type=media_type,
+        headers={"Cache-Control": f"public, max-age={config.BUNDLE_MAX_AGE}, immutable"},
+    )
+
+
 @router.api_route("/static/design-tokens.css", methods=["GET", "HEAD"], summary="The shared design tokens")
 def design_tokens():
     path = STATIC_DIR / "design-tokens.css"

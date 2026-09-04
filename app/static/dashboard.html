@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Leads · Widget Platform</title>
+  <link rel="icon" href="/static/brand/icon-48.png" type="image/png" sizes="48x48">
+  <link rel="icon" href="/static/brand/icon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/static/brand/icon-16.png" type="image/png" sizes="16x16">
+  <link rel="apple-touch-icon" href="/static/brand/icon-180.png">
   <link rel="stylesheet" href="/static/design-tokens.css">
   <style>
     * { box-sizing: border-box; margin: 0; }
@@ -23,6 +27,10 @@
       border-bottom: 1px solid var(--hairline-strong);
     }
     .bar h1 { font-size: 14px; font-weight: 600; }
+    /* The mark keeps its own squircle, so it needs no border or background. */
+    .mark { display: block; border-radius: var(--r-md); }
+    .bar .mark { margin-right: -6px; }
+    .gate .mark { margin: 0 auto 24px; border-radius: var(--r-xl); }
     .bar .spacer { flex: 1; }
     .muted { color: var(--body); font-size: 13px; }
     .mono { font-family: var(--mono); }
@@ -141,6 +149,7 @@
 </head>
 <body>
   <div class="bar">
+    <img class="mark" src="/static/brand/icon-48.png" width="26" height="26" alt="">
     <h1>Leads</h1>
     <span class="muted" id="scope"></span>
     <span class="spacer"></span>
@@ -151,6 +160,7 @@
 
   <div class="wrap">
     <section class="gate" id="gate" hidden>
+      <img class="mark" src="/static/brand/icon-180.png" width="56" height="56" alt="">
       <h2>Your API key</h2>
       <p>Paste the key <code>scripts/seed.py</code> printed. It stays in this browser and is sent as
          a bearer token — the server only ever stored its hash.</p>

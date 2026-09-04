@@ -163,6 +163,31 @@ I also fixed a bug I had shipped in Stage 4b while I was in there: the widget's 
 inherited `width: 100%; height: 44px` from the text-input rule, which makes a checkbox a large grey
 slab. No test caught it because no test looks at CSS.
 
+## Stage 13 — the logo
+
+The mark arrived as a 6.7 MB, 4096x4096 JPEG. Three things had to happen before it could be an
+icon, and all three are the sort of thing that gets skipped and then shows up in production:
+
+The **background had to be cut**, but the glyph is white and so is the paper around the squircle, so
+a colour key would have erased the mark along with the page. Flood-filling inward from the four
+corners removes only what is actually outside the shape.
+
+**A JPEG of a two-tone mark is not two-tone.** It arrived with 3,083 distinct colours of ringing
+around every edge, and PNG cannot compress noise: the first 512px export was 212 KB. Rebuilding it
+from the luminance channel — snapping the flat areas to the two real colours and keeping a ramp only
+where the edge genuinely is — brought the same file to 34 KB with no visible difference.
+
+**The master does not belong in git.** 6.7 MB of source is not a build artifact; `logo.jpg` is
+gitignored and only the five derivatives are committed, 49 KB in total.
+
+**What I flagged and did not silently fix.** At 16px this mark is close to unreadable: its stroke is
+about 3% of the icon's width where Expo's chevron is about 9%, so at favicon size it lands on half a
+pixel and greys out. I said so with the rendered files rather than shipping it quietly, and left the
+decision — thicker strokes, or a tighter favicon-only crop — to the person whose design it is.
+
+The customer landing deliberately does **not** carry this logo. That page is pretending to be
+someone else's website, and putting our mark on it would undo the one thing it exists to demonstrate.
+
 ## A mistake worth writing down
 
 In Stage 2 I pasted the seed's output straight into `EVIDENCE.md`, and the seed prints API keys. Two
