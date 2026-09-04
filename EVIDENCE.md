@@ -327,8 +327,60 @@ difference is in the database, and the dashboard leaves those rows out:
 
 ## Enrichment & safe side effects
 
-- [ ] Provider fallback chain: provider A down → provider B answers → submission enriched.
-- [ ] All providers down → submission still succeeds (without geo).
+- [x] Provider fallback chain: provider A down → provider B answers → submission enriched.
+
+**Stage 7.** The chain is `GEO_PROVIDERS`, and `GEO_PROVIDER_A_DOWN` / `_B_DOWN` mark a position in
+it as dead. Deterministic mock providers are the default so this proof needs no network:
+
+```
+# both up — A answers
+$ curl -X POST .../public/submissions -H 'X-Forwarded-For: 8.8.8.8' -d '{...}'
+{"id":42,"status":"received"}
+ok | mock_a | Spain, Madrid
+
+# A down — B answers, and the row is still enriched
+$ GEO_PROVIDER_A_DOWN=1 docker compose up -d app
+status 201
+ok | mock_b | Germany, Berlin
+app-1  | geo: mock_a marked down, skipping
+```
+
+The same chain against the real free services, to show the mocks are not the only thing that works:
+
+```
+$ GEO_PROVIDERS=ipapi,ipapico ...
+both up      status 201  ok | ip-api.com | United States, Ashburn
+A down       status 201  ok | ipapi.co   | United States, Mountain View
+```
+
+- [x] All providers down → submission still succeeds (without geo).
+
+**Stage 7.** The response is still a `201`; only the location columns are empty:
+
+```
+$ GEO_PROVIDER_A_DOWN=1 GEO_PROVIDER_B_DOWN=1 docker compose up -d app
+$ curl -i -X POST .../public/submissions -d '{...}'
+HTTP/1.1 201 Created
+{"id":44,"status":"received"}
+
+ id |       email        | geo_status  | geo_provider | country |  city
+----+--------------------+-------------+--------------+---------+--------
+ 42 | chain1@example.com | ok          | mock_a       | Spain   | Madrid
+ 43 | chain2@example.com | ok          | mock_b       | Germany | Berlin
+ 44 | chain3@example.com | unavailable |              |         |
+
+app-1  | geo: mock_a marked down, skipping
+app-1  | geo: mock_b marked down, skipping
+app-1  | geo: no provider answered, storing without location
+```
+
+A private address is not sent to a lookup service at all — it is recorded as skipped, and the
+submission is stored regardless:
+
+```
+localhost    status 201  skipped_private_ip | -
+```
+
 - [ ] A failing confirmation email / webhook does not prevent the submission from being stored.
 
 ## Documentation

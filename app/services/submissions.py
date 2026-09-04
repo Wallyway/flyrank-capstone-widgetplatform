@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from app import config
 from app.repositories.submissions import SubmissionsRepository
 from app.services.delivery import DeliveryService
+from app.services.geo import GeoService
 from app.services.ratelimit import RateLimiter
 from app.services.validation import validate_submission
 
@@ -12,10 +13,17 @@ ALLOWED_TOP_LEVEL = {"widget_id", "data"}
 class SubmissionsService:
     """Everything between "a stranger posted something" and "a row exists"."""
 
-    def __init__(self, delivery: DeliveryService, repository: SubmissionsRepository, limiter: RateLimiter):
+    def __init__(
+        self,
+        delivery: DeliveryService,
+        repository: SubmissionsRepository,
+        limiter: RateLimiter,
+        geo: GeoService,
+    ):
         self.delivery = delivery
         self.repository = repository
         self.limiter = limiter
+        self.geo = geo
 
     def submit(self, payload: dict, context: dict) -> tuple[dict, int]:
         widget = self.delivery.get_active(payload["widget_id"])
@@ -33,6 +41,10 @@ class SubmissionsService:
             if existing:
                 return self.receipt(existing, replayed=True), 200
 
+        # Enrichment happens before the insert because the answer belongs on the
+        # row. It is allowed to come back empty; it is not allowed to raise.
+        location = self.geo.enrich(context.get("ip", ""))
+
         row = self.repository.create(
             {
                 "widget_id": widget["id"],
@@ -44,6 +56,7 @@ class SubmissionsService:
                 "is_spam": is_spam,
                 "spam_reason": "honeypot" if is_spam else None,
                 "idempotency_key": idempotency_key,
+                **location,
             }
         )
 

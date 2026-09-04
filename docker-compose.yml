@@ -33,7 +33,9 @@ services:
       RATE_LIMIT_PER_WIDGET: ${RATE_LIMIT_PER_WIDGET:-25}
       RATE_LIMIT_PER_WIDGET_WINDOW: ${RATE_LIMIT_PER_WIDGET_WINDOW:-60}
       HONEYPOT_FIELD: ${HONEYPOT_FIELD:-website}
-      GEO_PROVIDERS: ${GEO_PROVIDERS:-ipapi,ipapico}
+      # Mocks by default so the fallback proof is deterministic and works with
+      # no network. Set GEO_PROVIDERS=ipapi,ipapico for the real services.
+      GEO_PROVIDERS: ${GEO_PROVIDERS:-mock_a,mock_b}
       GEO_PROVIDER_A_DOWN: ${GEO_PROVIDER_A_DOWN:-0}
       GEO_PROVIDER_B_DOWN: ${GEO_PROVIDER_B_DOWN:-0}
       GEO_FORCE_CLIENT_IP: ${GEO_FORCE_CLIENT_IP:-}

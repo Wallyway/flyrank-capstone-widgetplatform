@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError
+from starlette.concurrency import run_in_threadpool
 
 from app import config
 from app.services.delivery import DeliveryService
@@ -122,5 +123,8 @@ async def create_submission(request: Request):
         "idempotency_key": request.headers.get("idempotency-key"),
     }
 
-    receipt, status = get_submissions(request).submit(payload, context)
+    # The service blocks: psycopg is synchronous and so is the geo lookup.
+    # Running it in the threadpool keeps one slow upstream from stalling every
+    # other request on the event loop.
+    receipt, status = await run_in_threadpool(get_submissions(request).submit, payload, context)
     return JSONResponse(receipt, status_code=status)

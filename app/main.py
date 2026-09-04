@@ -13,6 +13,7 @@ from app.repositories.submissions import SubmissionsRepository
 from app.repositories.tenants import TenantsRepository
 from app.repositories.widgets import WidgetsRepository
 from app.services.delivery import DeliveryService
+from app.services.geo import GeoService
 from app.services.ratelimit import RateLimiter
 from app.services.submissions import SubmissionsService
 from app.services.widgets import WidgetsService
@@ -47,8 +48,9 @@ app.state.limiter = RateLimiter(
     config.RATE_LIMIT_PER_WIDGET,
     config.RATE_LIMIT_PER_WIDGET_WINDOW,
 )
+app.state.geo = GeoService.from_config()
 app.state.submissions_service = SubmissionsService(
-    app.state.delivery, app.state.submissions, app.state.limiter
+    app.state.delivery, app.state.submissions, app.state.limiter, app.state.geo
 )
 
 # Order matters: the last one added is the outermost, so CORS wraps the size
