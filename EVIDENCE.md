@@ -266,8 +266,64 @@ $ docker compose exec -T db psql -U widgetuser -d widgets \
 
 ## Abuse protection
 
-- [ ] Rate limiting returns `429` under a burst — and the API keeps serving legitimate traffic.
-- [ ] At least one spam-prevention technique demonstrably blocks a spam submission.
+- [x] Rate limiting returns `429` under a burst — and the API keeps serving legitimate traffic.
+
+**Stage 6.** Two limits run at once. Per IP (10 per 60s) stops one machine flooding:
+
+```
+$ for i in $(seq 1 15); do curl -X POST .../public/submissions \
+    -H 'X-Forwarded-For: 203.0.113.7' -d '{"widget_id":"wgt_demo_signup", ...}'; done
+201 201 201 201 201 201 201 201 201 201 429 429 429 429 429
+
+$ curl -i ... same IP again
+HTTP/1.1 429 Too Many Requests
+retry-after: 59
+{"error":"Too many submissions (ip limit). Retry in 59s."}
+```
+
+Per widget (25 per 60s) is the one a botnet with a thousand addresses actually hits — 30 requests
+from 30 different IPs to a single widget:
+
+```
+201 ×25, then 429 ×5
+  201s: 25   429s: 5
+{"error":"Too many submissions (widget limit). Retry in 59s."}
+```
+
+And the service keeps working for everyone else, immediately after both floods:
+
+```
+  health           200
+  another IP       201 {"id":13,"status":"received"}
+  widget config    200
+  wgt_demo_contact 201        # the widget next door, unaffected by the flood
+```
+
+- [x] At least one spam-prevention technique demonstrably blocks a spam submission.
+
+**Stage 6.** A hidden field named `website`, positioned off-screen rather than `display:none`
+because some bots skip hidden inputs. Filling it is the tell:
+
+```
+$ curl -i ... -d '{... ,"website":"http://spam.example"}'      # a bot
+HTTP/1.1 202 Accepted
+{"id":40,"status":"received"}
+
+$ curl -i ... -d '{... ,"website":""}'                          # a person
+HTTP/1.1 201 Created
+{"id":41,"status":"received"}
+```
+
+The bot gets the same words a person does, so it never learns which field gave it away. The
+difference is in the database, and the dashboard leaves those rows out:
+
+```
+ id |      email       | is_spam | spam_reason
+----+------------------+---------+-------------
+ 39 | real@example.com | f       |
+ 40 | bot@spam.example | t       | honeypot
+ 41 | real@example.com | f       |
+```
 
 ## Enrichment & safe side effects
 

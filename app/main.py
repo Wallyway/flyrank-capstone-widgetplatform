@@ -13,6 +13,7 @@ from app.repositories.submissions import SubmissionsRepository
 from app.repositories.tenants import TenantsRepository
 from app.repositories.widgets import WidgetsRepository
 from app.services.delivery import DeliveryService
+from app.services.ratelimit import RateLimiter
 from app.services.submissions import SubmissionsService
 from app.services.widgets import WidgetsService
 
@@ -40,7 +41,15 @@ app.state.widgets = WidgetsRepository(app.state.pool)
 app.state.widgets_service = WidgetsService(app.state.widgets)
 app.state.delivery = DeliveryService(app.state.widgets)
 app.state.submissions = SubmissionsRepository(app.state.pool)
-app.state.submissions_service = SubmissionsService(app.state.delivery, app.state.submissions)
+app.state.limiter = RateLimiter(
+    config.RATE_LIMIT_PER_IP,
+    config.RATE_LIMIT_PER_IP_WINDOW,
+    config.RATE_LIMIT_PER_WIDGET,
+    config.RATE_LIMIT_PER_WIDGET_WINDOW,
+)
+app.state.submissions_service = SubmissionsService(
+    app.state.delivery, app.state.submissions, app.state.limiter
+)
 
 # Order matters: the last one added is the outermost, so CORS wraps the size
 # check and a rejected 413 still comes back with its CORS headers attached.

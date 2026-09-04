@@ -24,9 +24,13 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-widgetuser}:${POSTGRES_PASSWORD:-widgetpass}@db:5432/${POSTGRES_DB:-widgets}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
       MAX_BODY_BYTES: ${MAX_BODY_BYTES:-8192}
+      # Inside compose every request arrives from Docker's gateway address, so
+      # without this the per-IP limit would see the entire internet as one
+      # client. Only safe because the only thing in front is a proxy we run.
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-1}
       RATE_LIMIT_PER_IP: ${RATE_LIMIT_PER_IP:-10}
       RATE_LIMIT_PER_IP_WINDOW: ${RATE_LIMIT_PER_IP_WINDOW:-60}
-      RATE_LIMIT_PER_WIDGET: ${RATE_LIMIT_PER_WIDGET:-60}
+      RATE_LIMIT_PER_WIDGET: ${RATE_LIMIT_PER_WIDGET:-25}
       RATE_LIMIT_PER_WIDGET_WINDOW: ${RATE_LIMIT_PER_WIDGET_WINDOW:-60}
       HONEYPOT_FIELD: ${HONEYPOT_FIELD:-website}
       GEO_PROVIDERS: ${GEO_PROVIDERS:-ipapi,ipapico}
