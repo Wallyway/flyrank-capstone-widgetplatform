@@ -250,6 +250,41 @@ the whole page on focus.
 **GitHub in the header**, the way Expo carries theirs — mark, wordmark at display weight and
 tracking, then the links, with the repository at the end and again in the footer.
 
+## Stage 17 — attribution, illustrated cards, and a flake I had denied
+
+**A test I had called deterministic was not.** Adding the FlyRank attribution turned the suite red
+once, then green on a re-run, which is the worst possible signal and the reason I chased it instead
+of shrugging. The cause was real: `pytest` runs in the same container as the live uvicorn process,
+against the same database, and that process has a notification worker polling for due jobs every two
+seconds. `claim_due` takes whatever is ready — including the job a test had just queued. So the
+running server could deliver, successfully, the job a test had set up to watch fail, and the
+assertion that it ends up `dead` would lose the race.
+
+The fix has two halves. Test jobs are now queued an hour in the future, so nothing that polls for
+*due* work can ever see them; and the tests drive their job by name through a new
+`claim_one(submission_id)`, which mirrors `claim_due` for a single row. There is a new test asserting
+that a second claim on the same row returns nothing, since "two workers must not both get it" is the
+property the whole queue rests on. Fifty-one tests now, green five runs in a row and green again with
+submissions in flight.
+
+Worth being blunt about: `EVIDENCE.md` claimed determinism on the strength of three identical runs.
+Three identical runs is evidence of nothing when the thing you are racing only wakes up every two
+seconds.
+
+**Illustrated cards.** The "how it works" section had three cards of prose. It now has four cards
+that show the thing instead: the API call and its response, a browser window with the widget
+rendering inside a page it does not own, the gauntlet a submission runs as a column of status codes,
+and the worker log degrading and dead-lettering while the lead stays put. All four are drawn in HTML
+and CSS rather than shipped as images — they stay crisp at any pixel density, weigh nothing, need no
+build step, and follow the design tokens if the tokens change.
+
+**Attribution.** FlyRank's wordmark sits in the footer, linked to the internship. It is self-hosted
+rather than hotlinked: their asset should not be fetched from their servers on every page view, and
+a link that rots would leave a broken image in our footer. Both files were read before being
+committed — paths only, no script, no external references. It is also the one place a colour that is
+not ours is allowed on the page, on the same principle Expo uses: somebody else's logo is content,
+not chrome.
+
 ## A mistake worth writing down
 
 In Stage 2 I pasted the seed's output straight into `EVIDENCE.md`, and the seed prints API keys. Two

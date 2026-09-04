@@ -586,7 +586,8 @@ run 2: 50 passed, 2 warnings in 0.74s
 run 3: 50 passed, 2 warnings in 0.83s
 ```
 
-Three things make them deterministic rather than merely passing today:
+Three things make them deterministic rather than merely passing today. A fourth was missing until
+Stage 17 and is recorded honestly below.
 
 - **No network.** The provider chain is tested with mock providers and a `DeadProvider` that raises
   on contact, so "provider A is down" is a fact rather than a hope about the internet.
@@ -602,6 +603,25 @@ $ ... -tAc "SELECT COUNT(*) FROM tenants WHERE name LIKE 'test-%';"
 0                 # nothing left behind
 $ ... -tAc "SELECT COUNT(*) FROM tenants;"
 2                 # the demo data is untouched
+```
+
+**Correction, Stage 17.** The claim above was overstated when it was written. `pytest` runs in the
+same container as the live server, whose notification worker polls the same queue every two seconds
+and claims whatever is due — including a job a test had just enqueued. The server could therefore
+deliver, successfully, the job a test had set up to watch fail. Test jobs are now queued an hour out
+so nothing polling for *due* work can see them, and the tests claim their job by name through
+`claim_one()`. A new test asserts a second claim on the same row returns nothing.
+
+```
+$ for i in 1 2 3 4 5; do docker compose exec -T app python -m pytest -q; done
+  run 1: 51 passed, 2 warnings in 0.90s
+  run 2: 51 passed, 2 warnings in 0.78s
+  run 3: 51 passed, 2 warnings in 0.80s
+  run 4: 51 passed, 2 warnings in 0.81s
+  run 5: 51 passed, 2 warnings in 0.84s
+
+# and again with submissions in flight, which is what exposed it
+  with jobs in flight: 51 passed, 2 warnings in 0.78s
 ```
 
 ## Documentation

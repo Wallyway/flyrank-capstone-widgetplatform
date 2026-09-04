@@ -81,6 +81,13 @@ def font_file(filename: str):
 
 
 BRAND = {f"icon-{px}.png": "image/png" for px in (512, 180, 48, 32, 16)}
+# FlyRank's own wordmark, kept here rather than hotlinked: their asset should
+# not be fetched from their server every time someone opens this page. Both
+# files were read before being committed — paths only, no script.
+BRAND.update({
+    "flyrank-wordmark-onlight.svg": "image/svg+xml",
+    "flyrank-wordmark-ondark.svg": "image/svg+xml",
+})
 
 
 @router.api_route("/static/brand/{filename}", methods=["GET", "HEAD"], summary="The logo, at the sizes a browser asks for")

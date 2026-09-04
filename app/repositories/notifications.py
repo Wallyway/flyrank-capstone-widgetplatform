@@ -28,6 +28,21 @@ class NotificationsRepository:
                 (limit,),
             ).fetchall()
 
+    def claim_one(self, submission_id: int) -> Optional[dict]:
+        """Claim one named job, whenever it is due.
+
+        claim_due takes whatever is ready, which is right for a worker and
+        wrong for anything that needs to drive a specific job: two workers
+        against one database would otherwise race for the same row.
+        """
+        with self.pool.connection() as conn:
+            return conn.execute(
+                "UPDATE notification_jobs SET status = 'processing', attempts = attempts + 1, updated_at = now() "
+                "WHERE submission_id = %s AND status = 'pending' "
+                f"RETURNING {JOB_COLUMNS}",
+                (submission_id,),
+            ).fetchone()
+
     def payload_for(self, submission_id: int) -> Optional[dict]:
         with self.pool.connection() as conn:
             return conn.execute(

@@ -164,6 +164,7 @@
     .lede { margin-top: 14px; max-width: 620px; font-size: 17px; line-height: 1.5; color: var(--body); }
 
     .grid { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 940px) { .features { grid-template-columns: 1fr; } }
     @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } h2 { font-size: 28px; letter-spacing: -0.84px; } }
     .card {
       background: var(--canvas); border: 1px solid var(--hairline-strong);
@@ -171,6 +172,91 @@
     }
     .card h3 { font-size: 16px; font-weight: 600; }
     .card p { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--body); }
+    /* --- illustrated feature cards --------------------------------------- */
+    .features {
+      margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .feature {
+      background: var(--canvas); border: 1px solid var(--hairline-strong);
+      border-radius: var(--r-xl); padding: 24px 24px 26px;
+      transition: box-shadow var(--speed) var(--ease);
+    }
+    .feature:hover { box-shadow: var(--shadow-card); }
+    .feature h3 { margin-top: 22px; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+    .feature p { margin-top: 8px; font-size: 14px; line-height: 1.55; color: var(--body); }
+
+    /* Every illustration is drawn in HTML rather than shipped as an image: it
+       stays crisp at any density, weighs nothing, and follows the tokens. */
+    .art {
+      height: 250px; border-radius: var(--r-lg); overflow: hidden;
+      background: var(--surface-dark); display: flex;
+    }
+
+    .mock { width: 100%; display: flex; flex-direction: column; }
+    .mock-bar {
+      padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.09);
+      color: var(--on-dark-soft);
+    }
+    .mock-body {
+      margin: 0; padding: 14px 16px; overflow: hidden;
+      font-family: var(--mono); font-size: 11.5px; line-height: 1.65;
+      color: var(--on-dark-soft); white-space: pre;
+    }
+    .mock-body .k { color: var(--on-dark); }
+    .mock-body .p { color: #8fb8ff; }
+    .mock-body .v { color: #7ee2b8; }
+    .mock-body .n { color: #d3a0ff; }
+    .mock-body .ok { color: var(--success); }
+    .mock-body .warned { color: #ffb454; }
+    .mock-body .dimmed { color: #6f7580; }
+
+    /* A browser window, because "it renders on a page you do not own" is
+       easier to show than to say. */
+    .browser { width: 100%; padding: 16px; display: flex; }
+    .chrome {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 10px; height: 26px;
+      background: #232323; border-radius: 7px 7px 0 0;
+    }
+    .chrome i { width: 7px; height: 7px; border-radius: 50%; background: #4a4a4a; }
+    .chrome span {
+      margin-left: 8px; font-family: var(--mono); font-size: 10px; color: #7b8189;
+    }
+    .viewport {
+      flex: 1; padding: 14px; background: #f7f7f8;
+      border-radius: 0 0 7px 7px; display: flex; flex-direction: column; gap: 9px;
+    }
+    .browser > div { flex: 1; display: flex; flex-direction: column; }
+    .skeleton-line { height: 7px; border-radius: 4px; background: #e2e3e6; }
+    .w60 { width: 60%; } .w40 { width: 40%; } .w50 { width: 50%; }
+    .mini-widget {
+      margin: 4px 0; padding: 11px; background: #ffffff;
+      border: 1px solid #dcdee0; border-radius: 8px;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .mini-title { height: 8px; width: 52%; border-radius: 4px; background: #171717; }
+    .mini-input { height: 15px; border-radius: 4px; background: #f0f0f3; }
+    .mini-btn { height: 15px; border-radius: 4px; background: #000000; }
+
+    /* The gauntlet, in the order a request actually meets it. */
+    .pipeline {
+      width: 100%; padding: 18px; display: flex; flex-direction: column;
+      justify-content: center; gap: 9px;
+    }
+    .stage {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12.5px; color: var(--on-dark-soft);
+    }
+    .stage.pass { color: var(--on-dark); }
+    .code-chip {
+      flex: none; width: 42px; text-align: center;
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+      padding: 4px 0; border-radius: var(--r-sm);
+    }
+    .code-chip.bad  { background: rgba(235,142,144,.16); color: #f0a6a8; }
+    .code-chip.warn { background: rgba(255,180,84,.15);  color: #ffb454; }
+    .code-chip.good { background: rgba(22,163,74,.18);   color: #5ddb92; }
+
     .card .step {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; margin-bottom: 16px;
@@ -211,6 +297,18 @@
     footer nav a { font-size: 13px; color: var(--body); }
     footer nav a:hover { color: var(--ink); }
 
+    /* The one place a colour that is not ours is allowed: somebody else's
+       logo is content, not chrome. */
+    .credit {
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      margin-top: 20px; padding-top: 20px;
+      border-top: 1px solid var(--hairline);
+      font-size: 13px; color: var(--muted);
+    }
+    .credit a { display: inline-flex; align-items: center; }
+    .credit img { display: block; opacity: .85; transition: opacity var(--speed) var(--ease); }
+    .credit a:hover img { opacity: 1; }
+
     /* ---------------------------------------------------------------------
        Mobile. Appended last so it wins on order, and written as one block so
        the phone layout can be read in one place instead of hunted for.
@@ -221,6 +319,7 @@
       h2 { font-size: 28px; letter-spacing: -0.84px; }
       .lede { font-size: 16px; }
       .grid { margin-top: 26px; gap: 12px; }
+      .features { margin-top: 26px; gap: 12px; }
 
       /* Everything stays reachable: the nav scrolls sideways instead of
          dropping links or collapsing into a menu for four items. */
@@ -250,6 +349,9 @@
       h2 { font-size: 24px; letter-spacing: -0.6px; }
       .section { padding: 40px 0; }
       .card { padding: 20px; }
+      .feature { padding: 18px 18px 20px; border-radius: var(--r-lg); }
+      .art { height: 210px; }
+      .mock-body { font-size: 10.5px; }
       .snippet { padding: 18px; border-radius: var(--r-md); }
       .snippet code { font-size: 12px; }
       footer { padding: 32px 0 48px; }
@@ -322,26 +424,82 @@
        cached like a CDN. The submission endpoint is public, hostile-by-default, and never trusts
        a single field it is given.</p>
 
-    <div class="grid">
-      <div class="card">
-        <span class="step">1</span>
+    <div class="features">
+      <article class="feature">
+        <div class="art">
+          <div class="mock">
+            <div class="mock-bar"><span class="caption-up">POST /api/widgets</span></div>
+            <pre class="mock-body"><span class="k">{</span>
+  <span class="p">"type"</span>: <span class="v">"signup_form"</span>,
+  <span class="p">"title"</span>: <span class="v">"Join the beta"</span>,
+  <span class="p">"fields"</span>: [
+    { <span class="p">"name"</span>: <span class="v">"email"</span>, <span class="p">"required"</span>: <span class="n">true</span> }
+  ]
+<span class="k">}</span>
+
+<span class="ok">201</span>  id = <span class="v">wgt_7f3a94c2</span></pre>
+          </div>
+        </div>
         <h3>Create a widget</h3>
         <p>An authenticated CRUD API, isolated per tenant in SQL. Another customer's widget answers
-           404, never 403 — a 403 would confirm the id exists.</p>
-      </div>
-      <div class="card">
-        <span class="step">2</span>
+           404, never 403 &mdash; a 403 would confirm the id exists.</p>
+      </article>
+
+      <article class="feature">
+        <div class="art">
+          <div class="browser">
+            <div class="chrome"><i></i><i></i><i></i><span>northwind.example</span></div>
+            <div class="viewport">
+              <div class="skeleton-line w60"></div>
+              <div class="skeleton-line w40"></div>
+              <div class="mini-widget">
+                <div class="mini-title"></div>
+                <div class="mini-input"></div>
+                <div class="mini-input"></div>
+                <div class="mini-btn"></div>
+              </div>
+              <div class="skeleton-line w50"></div>
+            </div>
+          </div>
+        </div>
         <h3>Paste one line</h3>
         <p>A short-lived loader pulls a versioned bundle cached for a year and a config cached for a
            minute. The widget renders inside a shadow root, so the host page cannot restyle it.</p>
-      </div>
-      <div class="card">
-        <span class="step">3</span>
+      </article>
+
+      <article class="feature">
+        <div class="art">
+          <div class="pipeline">
+            <div class="stage"><span class="code-chip bad">413</span><span>body over 8 KB</span></div>
+            <div class="stage"><span class="code-chip bad">400</span><span>field it never declared</span></div>
+            <div class="stage"><span class="code-chip bad">429</span><span>eleventh in a minute</span></div>
+            <div class="stage"><span class="code-chip warn">202</span><span>honeypot was filled</span></div>
+            <div class="stage pass"><span class="code-chip good">201</span><span>stored, enriched, queued</span></div>
+          </div>
+        </div>
         <h3>Catch what comes back</h3>
-        <p>Size limit, field validation, rate limits per IP and per widget, a honeypot, an
-           idempotency key, geo enrichment that degrades instead of failing, and a notification that
-           runs off the request path.</p>
-      </div>
+        <p>Size limit, field validation, rate limits per IP and per widget, a honeypot and an
+           idempotency key &mdash; five ways to be turned away before a row is ever written.</p>
+      </article>
+
+      <article class="feature">
+        <div class="art">
+          <div class="mock">
+            <div class="mock-bar"><span class="caption-up">Worker</span></div>
+            <pre class="mock-body"><span class="dimmed">geo:</span> provider_a down, falling back
+<span class="dimmed">geo:</span> provider_b answered <span class="ok">Spain, Madrid</span>
+<span class="dimmed">db:</span>  submission <span class="v">#4182</span> stored  <span class="ok">201</span>
+
+<span class="dimmed">notify:</span> attempt 1 failed, retry in 2s
+<span class="dimmed">notify:</span> attempt 2 failed, retry in 4s
+<span class="warned">ALERT</span> job 91 dead after 4 attempts
+<span class="dimmed">…and the submission is still there.</span></pre>
+          </div>
+        </div>
+        <h3>Fail without losing a lead</h3>
+        <p>Enrichment degrades to no location. The notification is deferred and retried off the
+           request path. Neither can turn a stored lead back into an error.</p>
+      </article>
     </div>
   </div>
 
@@ -404,13 +562,20 @@
   <footer>
     <div class="wrap">
       <img src="/static/brand/icon-32.png" width="22" height="22" alt="">
-      <span class="muted">Widget Platform · FlyRank internship capstone</span>
+      <span class="muted">Widget Platform</span>
       <nav>
         <a href="/dashboard">Dashboard</a>
         <a href="/docs">API</a>
         <a href="/health">Health</a>
         <a href="https://github.com/Wallyway/flyrank-capstone-widgetplatform" target="_blank" rel="noopener">Source</a>
       </nav>
+    </div>
+    <div class="wrap credit">
+      <span>Built for the backend track of the</span>
+      <a href="https://internship.flyrank.ai" target="_blank" rel="noopener" aria-label="FlyRank">
+        <img src="/static/brand/flyrank-wordmark-onlight.svg" width="58" height="19" alt="FlyRank">
+      </a>
+      <span>internship.</span>
     </div>
   </footer>
 
