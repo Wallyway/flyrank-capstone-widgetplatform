@@ -216,6 +216,40 @@ generator, so the burst is identical on every build and a reader never sees it s
 deploys. It is masked with a radial gradient so the field fades out instead of ending at a hard
 crop, and it inherits `--ink`, which means it will follow the palette if the palette ever changes.
 
+## Stage 16 — the hero in three columns, and a phone that works
+
+**Layout.** Stacked vertically the mark was decoration sitting above a headline; standing the three
+side by side — headline and buttons left, mark centre, status pill and description right — gives it
+something to hold up. Below 1140px it collapses to one column, and the pieces are *reordered* rather
+than merely narrowed: mark, headline, pill, description, buttons. That needed `display: contents` on
+the two wrappers so each child could be placed individually instead of moving as a block.
+
+**The field.** 132 rays and 320 dots now, from a seeded generator, with the dots scattered *along*
+each ray rather than only at its tip — that is what stops it reading as a wheel of spokes.
+
+**Motion.** A seven-second breath, slow enough to read as alive rather than as something blinking
+for attention. The pointer interaction is the part worth explaining: a 0.75px stroke is not a hover
+target, so instead of hit-testing 132 lines, each ray stores its own angle once and lights by how
+close the pointer's angle is to it, with the shortest way round the circle so the seam at ±π does
+not go dark. One `requestAnimationFrame` per move, and the whole thing returns early under
+`prefers-reduced-motion`.
+
+**Mobile.** Three real gaps, found by auditing rather than by looking: the landing's bar put four
+links and a wordmark on one row, the dashboard's bar had no `flex-wrap` at all and would have pushed
+its buttons off the edge, and every nav link was a 14px text target with no vertical padding. The
+nav now scrolls sideways instead of hiding links or collapsing into a menu for four items; the
+dashboard's two status lines drop to their own row; the KPI row goes to two columns rather than five
+stacked cards; the submissions table keeps every column and scrolls rather than hiding data; and
+targets get vertical padding under `@media (hover: none)`, so the desktop rhythm is untouched.
+
+The widget got its own treatment, because it is the piece that lands on other people's phones: below
+480px the popover stops being a floating panel and becomes a sheet pinned to the bottom edge, where
+a thumb already is. Its inputs were already 44px tall at 16px type, which is what stops iOS zooming
+the whole page on focus.
+
+**GitHub in the header**, the way Expo carries theirs — mark, wordmark at display weight and
+tracking, then the links, with the repository at the end and again in the footer.
+
 ## A mistake worth writing down
 
 In Stage 2 I pasted the seed's output straight into `EVIDENCE.md`, and the seed prints API keys. Two

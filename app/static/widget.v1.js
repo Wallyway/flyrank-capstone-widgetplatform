@@ -170,6 +170,18 @@
   }
   .close:hover:not(:disabled) { background: var(--hairline-strong); }
 
+  /* On a phone the popover stops being a floating panel and becomes a sheet
+     pinned to the bottom edge, which is where a thumb already is. */
+  @media (max-width: 480px) {
+    .card { padding: 20px; }
+    .panel {
+      right: 12px; left: 12px; bottom: 12px;
+      width: auto; max-width: none;
+      max-height: calc(100vh - 96px);
+    }
+    .launcher { right: 12px; bottom: 12px; left: 12px; justify-content: center; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }

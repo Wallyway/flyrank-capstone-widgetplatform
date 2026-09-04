@@ -145,6 +145,43 @@
     .empty { padding: 40px 0; text-align: center; color: var(--body); font-size: 14px; }
     .error { color: var(--ink); font-size: 13px; border-left: 2px solid var(--error-line); padding-left: 10px; }
     .error:empty { display: none; }
+
+    /* ---------------------------------------------------------------------
+       Mobile.
+       --------------------------------------------------------------------- */
+    @media (max-width: 760px) {
+      .wrap { padding: 24px 20px 0; }
+      .bar { padding: 12px 20px; flex-wrap: wrap; row-gap: 8px; }
+      /* The two status lines drop to their own row rather than squeezing the
+         buttons off the edge. */
+      #scope, #updated { order: 3; flex-basis: 100%; }
+      #updated { text-align: left; }
+      .bar .spacer { flex: 1 1 auto; }
+
+      /* Two columns of numbers beat five stacked cards on a phone. */
+      .kpis { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+      .kpi { padding: 18px; }
+      .kpi .value { font-size: 24px; letter-spacing: -0.6px; }
+
+      .panel { padding: 20px; margin-top: 16px; }
+      .cols { gap: 16px; }
+      .gate { margin: 48px auto; }
+      .gate h2 { font-size: 28px; letter-spacing: -0.84px; }
+
+      /* The table keeps every column and scrolls, rather than hiding data. */
+      .scroll { -webkit-overflow-scrolling: touch; }
+      table { min-width: 520px; }
+    }
+
+    @media (max-width: 420px) {
+      .wrap { padding: 20px 16px 0; }
+      .bar { padding: 12px 16px; }
+      .kpis { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (hover: none) {
+      .bar nav a { padding: 10px 0; }
+    }
   </style>
 </head>
 <body>
