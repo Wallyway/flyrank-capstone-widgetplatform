@@ -511,6 +511,47 @@ The API key is pasted once and kept in `localStorage`; a `401` clears it and ret
 The page and the widget share one stylesheet of tokens, served at `/static/design-tokens.css`, so
 the two surfaces cannot drift apart.
 
+## Test suite (stretch goal)
+
+- [x] Deterministic tests covering preflight, invalid payloads, rate limiting, spam control and
+      provider fallback.
+
+**Stage 10.** `docker compose exec app python -m pytest -q` — 50 tests, under a second, and the same
+result every run:
+
+```
+$ docker compose exec -T app python -m pytest
+tests/test_cors.py ...                                                   [  6%]
+tests/test_dashboard.py .......                                          [ 20%]
+tests/test_delivery.py .......                                           [ 34%]
+tests/test_geo.py ............                                           [ 58%]
+tests/test_notifications.py ...                                          [ 64%]
+tests/test_submissions.py ...........                                    [ 86%]
+tests/test_widgets_admin.py .......                                      [100%]
+
+run 1: 50 passed, 2 warnings in 0.74s
+run 2: 50 passed, 2 warnings in 0.74s
+run 3: 50 passed, 2 warnings in 0.83s
+```
+
+Three things make them deterministic rather than merely passing today:
+
+- **No network.** The provider chain is tested with mock providers and a `DeadProvider` that raises
+  on contact, so "provider A is down" is a fact rather than a hope about the internet.
+- **No background tasks.** `TestClient` is used without its context manager, which skips the
+  lifespan, so the notification worker never runs on its own. The worker tests drive `tick()` by
+  hand and step `next_attempt_at` back to now, turning a 2/4/8-second backoff into an instant test.
+- **No shared state.** Each test gets a fresh tenant that is deleted afterwards (everything cascades
+  from it), and an autouse fixture clears the rate-limit counters — otherwise the order tests ran in
+  would decide whether they passed.
+
+```
+$ ... -tAc "SELECT COUNT(*) FROM tenants WHERE name LIKE 'test-%';"
+0                 # nothing left behind
+$ ... -tAc "SELECT COUNT(*) FROM tenants;"
+2                 # the demo data is untouched
+```
+
 ## Documentation
 
 - [ ] README with architecture diagram, setup instructions, and API documentation.
