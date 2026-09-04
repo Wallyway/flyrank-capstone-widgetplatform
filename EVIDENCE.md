@@ -489,6 +489,28 @@ The quiet days come back as zeros rather than being missing, because the query b
 range with `generate_series` and left-joins onto it — a chart drawn from this cannot invent a
 straight line across a gap.
 
+**Stage 9b.** `GET /dashboard` serves the owner's page. It is a client of the API above and holds no
+logic of its own — every figure it shows comes from one of these five calls, and it has no way to
+reach the database:
+
+```
+$ curl -sI http://localhost:8000/dashboard
+HTTP/1.1 200 OK
+cache-control: no-store
+content-type: text/html; charset=utf-8
+
+$ curl -s http://localhost:8000/dashboard | grep -oE '/api/[a-z/?=&0-9-]+' | sort -u
+  calls /api/stats/by-widget
+  calls /api/stats/geo
+  calls /api/stats/overview
+  calls /api/stats/timeseries?days=14
+  calls /api/submissions?limit=25
+```
+
+The API key is pasted once and kept in `localStorage`; a `401` clears it and returns to the gate.
+The page and the widget share one stylesheet of tokens, served at `/static/design-tokens.css`, so
+the two surfaces cannot drift apart.
+
 ## Documentation
 
 - [ ] README with architecture diagram, setup instructions, and API documentation.

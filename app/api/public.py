@@ -58,6 +58,30 @@ def widget_bundle(version: str):
     )
 
 
+@router.api_route("/static/design-tokens.css", methods=["GET", "HEAD"], summary="The shared design tokens")
+def design_tokens():
+    path = STATIC_DIR / "design-tokens.css"
+    return Response(
+        content=path.read_text(encoding="utf-8"),
+        media_type="text/css; charset=utf-8",
+        # Not immutable: this filename does not carry a version, so it gets the
+        # same short cache the config does.
+        headers={"Cache-Control": f"public, max-age={config.CONFIG_MAX_AGE}"},
+    )
+
+
+@router.api_route("/dashboard", methods=["GET", "HEAD"], summary="The owner's dashboard page", include_in_schema=False)
+def dashboard_page():
+    path = STATIC_DIR / "dashboard.html"
+    return Response(
+        content=path.read_text(encoding="utf-8"),
+        media_type="text/html; charset=utf-8",
+        # An app shell that reads live data. Caching it would only ever serve
+        # someone an older version of the page.
+        headers={"Cache-Control": "no-store"},
+    )
+
+
 @router.api_route("/public/widgets/{widget_id}/config", methods=["GET", "HEAD"], summary="What the widget renders")
 def widget_config(widget_id: str, request: Request):
     delivery = get_delivery(request)
