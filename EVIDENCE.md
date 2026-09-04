@@ -172,6 +172,28 @@ the widget for comparison.
 > not usable in this environment, so no screenshot is claimed here — the request chain above is what
 > is actually machine-verified.
 
+**Stage 4b.** The same page now carries two widgets from one bundle — an inline signup form and a
+popover contact form — and the bundle stays inside its size budget with all its CSS inlined:
+
+```
+$ curl -sI http://localhost:8000/static/widget.v1.js
+cache-control: public, max-age=31536000, immutable
+content-length: 13507          # budget was 20480
+
+$ for W in wgt_demo_signup wgt_demo_contact; do ...; done
+wgt_demo_signup    loader 200  layout inline  | theme auto | fields 3
+wgt_demo_contact   loader 200  layout popover | theme auto | fields 2
+
+$ curl -s http://localhost:5500/ | grep -c 'localhost:8000/widget.js'
+script tags: 2
+
+$ node --check widget.v1.js
+widget.v1.js parses cleanly
+```
+
+Two widgets on one page share a single bundle download: the loader queues its mount request and only
+the first one injects the script.
+
 ## Public submission API
 
 - [ ] Cross-origin submissions work: CORS headers correct, preflight (`OPTIONS`) handled.
