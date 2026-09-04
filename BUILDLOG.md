@@ -188,6 +188,23 @@ decision — thicker strokes, or a tighter favicon-only crop — to the person w
 The customer landing deliberately does **not** carry this logo. That page is pretending to be
 someone else's website, and putting our mark on it would undo the one thing it exists to demonstrate.
 
+## Stage 14 — a landing page for the product
+
+"Put the logo on the landing page" had three readings and they led to very different work, so I
+asked instead of guessing. The one that was chosen is the one that costs nothing elsewhere: a new
+product landing at `/`, with the full identity and the mark, while the test site at :5500 stays
+exactly as it was.
+
+That separation matters more than it looks. The test site's entire job is to be a page this platform
+does not control — a different origin, with CSS that actively tries to repaint the widget. Turning it
+into our own marketing page would have made it prettier and quietly destroyed the thing it exists to
+prove. The landing says so in as many words and links across to it, because the widget it embeds is
+same-origin and is therefore *not* the CORS proof.
+
+`/` had been a 404 until now, which was a small gap: the one URL a person types first answered
+nothing. Both HTML pages now go through one `html_page()` helper with `Cache-Control: no-store`,
+since an app shell that reads live data should never be served from a cache.
+
 ## A mistake worth writing down
 
 In Stage 2 I pasted the seed's output straight into `EVIDENCE.md`, and the seed prints API keys. Two

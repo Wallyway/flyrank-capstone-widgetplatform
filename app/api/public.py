@@ -107,14 +107,22 @@ def design_tokens():
     )
 
 
+@router.api_route("/", methods=["GET", "HEAD"], summary="The product landing page", include_in_schema=False)
+def landing_page():
+    return html_page("landing.html")
+
+
 @router.api_route("/dashboard", methods=["GET", "HEAD"], summary="The owner's dashboard page", include_in_schema=False)
 def dashboard_page():
-    path = STATIC_DIR / "dashboard.html"
+    return html_page("dashboard.html")
+
+
+def html_page(filename: str) -> Response:
     return Response(
-        content=path.read_text(encoding="utf-8"),
+        content=(STATIC_DIR / filename).read_text(encoding="utf-8"),
         media_type="text/html; charset=utf-8",
-        # An app shell that reads live data. Caching it would only ever serve
-        # someone an older version of the page.
+        # App shells that read live data. Caching one only ever serves someone
+        # an older version of the page.
         headers={"Cache-Control": "no-store"},
     )
 

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Widget Platform — embeddable widgets and lead capture</title>
+  <meta name="description" content="Define a widget, paste one line of script, and catch everything the public internet sends back — validated, rate-limited, enriched and stored.">
+  <link rel="icon" href="/static/brand/icon-48.png" type="image/png" sizes="48x48">
+  <link rel="icon" href="/static/brand/icon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/static/brand/icon-16.png" type="image/png" sizes="16x16">
+  <link rel="apple-touch-icon" href="/static/brand/icon-180.png">
+  <link rel="stylesheet" href="/static/design-tokens.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: var(--font); background: var(--canvas); color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 28px; }
+
+    /* Plain white bar with a hairline. No blur, no material. */
+    .bar {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--canvas); border-bottom: 1px solid var(--hairline-strong);
+    }
+    .bar .wrap { display: flex; align-items: center; gap: 10px; padding-top: 12px; padding-bottom: 12px; }
+    .bar img { display: block; border-radius: var(--r-md); }
+    .bar .name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+    .bar nav { margin-left: auto; display: flex; align-items: center; gap: 22px; }
+    .bar nav a { font-size: 14px; font-weight: 500; color: var(--body); }
+    .bar nav a:hover { color: var(--ink); }
+
+    /* --- buttons --------------------------------------------------------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 40px; padding: 0 18px;
+      font-size: 14px; font-weight: 500; line-height: 1;
+      border-radius: var(--r-md); border: 1px solid transparent;
+      transition: background var(--speed) var(--ease);
+    }
+    .btn.primary { background: var(--primary); color: #ffffff; }
+    .btn.primary:hover { background: var(--primary-active); }
+    .btn.secondary { background: var(--canvas); color: var(--ink); border-color: var(--hairline-strong); }
+    .btn.secondary:hover { background: var(--canvas-soft); }
+
+    /* --- hero ------------------------------------------------------------ */
+    .hero {
+      background: linear-gradient(180deg, var(--sky-light) 0%, var(--sky-mid) 40%, var(--canvas) 100%);
+      padding: 88px 0 80px; text-align: center;
+    }
+    .badge {
+      display: inline-block; margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.72); color: var(--ink);
+      border-radius: var(--r-pill); padding: 5px 12px;
+    }
+    .hero h1 { font-size: 64px; font-weight: 600; line-height: 1.05; letter-spacing: -1.92px; }
+    .hero p {
+      margin: 24px auto 0; max-width: 620px;
+      font-size: 19px; line-height: 1.5; letter-spacing: -0.01em; color: var(--body);
+    }
+    .actions { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    @media (max-width: 760px) { .hero h1 { font-size: 40px; letter-spacing: -1.2px; } .hero p { font-size: 17px; } }
+
+    /* --- sections -------------------------------------------------------- */
+    section.band { background: var(--canvas-soft); border-block: 1px solid var(--hairline-strong); }
+    .section { padding: 72px 0; }
+    .eyebrow { color: var(--body); }
+    h2 { margin-top: 12px; font-size: 36px; font-weight: 600; line-height: 1.15; letter-spacing: -1.08px; }
+    .lede { margin-top: 14px; max-width: 620px; font-size: 17px; line-height: 1.5; color: var(--body); }
+
+    .grid { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } h2 { font-size: 28px; letter-spacing: -0.84px; } }
+    .card {
+      background: var(--canvas); border: 1px solid var(--hairline-strong);
+      border-radius: var(--r-lg); padding: 24px;
+    }
+    .card h3 { font-size: 16px; font-weight: 600; }
+    .card p { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--body); }
+    .card .step {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; margin-bottom: 16px;
+      background: var(--surface-strong); border-radius: var(--r-md);
+      font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+    }
+
+    /* A near-black code block is the other half of the texture. */
+    .snippet {
+      background: var(--surface-dark); color: var(--on-dark);
+      border-radius: var(--r-lg); padding: 22px 24px; overflow-x: auto;
+    }
+    .snippet .caption-up { display: block; margin-bottom: 14px; color: var(--on-dark-soft); }
+    .snippet code { font-family: var(--mono); font-size: 13px; line-height: 1.6; white-space: pre; }
+    .snippet .dim { color: var(--on-dark-soft); }
+
+    /* --- the live demo --------------------------------------------------- */
+    .demo { display: grid; grid-template-columns: 1fr 400px; gap: 56px; align-items: start; }
+    @media (max-width: 940px) { .demo { grid-template-columns: 1fr; } }
+    .note {
+      margin-top: 24px; padding-left: 14px; border-left: 2px solid var(--hairline-strong);
+      font-size: 14px; line-height: 1.6; color: var(--body);
+    }
+    .note code {
+      font-family: var(--mono); font-size: 13px;
+      background: var(--surface-strong); color: var(--ink);
+      border-radius: var(--r-xs); padding: 2px 6px;
+    }
+    .note a { color: var(--link); }
+    .note a:hover { text-decoration: underline; }
+
+    /* --- footer ---------------------------------------------------------- */
+    footer { border-top: 1px solid var(--hairline-strong); padding: 40px 0 64px; }
+    footer .wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    footer img { display: block; border-radius: var(--r-sm); }
+    footer .muted { font-size: 13px; color: var(--body); }
+    footer nav { margin-left: auto; display: flex; gap: 20px; }
+    footer nav a { font-size: 13px; color: var(--body); }
+    footer nav a:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <div class="wrap">
+      <img src="/static/brand/icon-48.png" width="26" height="26" alt="">
+      <span class="name">Widget Platform</span>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/docs">API</a>
+        <a href="http://localhost:5500" target="_blank" rel="noopener">Test site</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap">
+      <span class="badge caption-up">Backend capstone</span>
+      <h1>One line of script.<br>Every lead, safely.</h1>
+      <p>Define a widget, hand a customer a single <code>&lt;script&gt;</code> tag, and catch
+         everything the public internet sends back — validated, rate-limited, spam-filtered,
+         enriched with location and stored.</p>
+      <div class="actions">
+        <a class="btn primary" href="/dashboard">Open the dashboard</a>
+        <a class="btn secondary" href="/docs">Read the API</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap section">
+    <span class="eyebrow caption-up">How it works</span>
+    <h2>Three request paths,<br>three sets of rules.</h2>
+    <p class="lede">The owner's API is authenticated and tenant-isolated. Delivery is public and
+       cached like a CDN. The submission endpoint is public, hostile-by-default, and never trusts
+       a single field it is given.</p>
+
+    <div class="grid">
+      <div class="card">
+        <span class="step">1</span>
+        <h3>Create a widget</h3>
+        <p>An authenticated CRUD API, isolated per tenant in SQL. Another customer's widget answers
+           404, never 403 — a 403 would confirm the id exists.</p>
+      </div>
+      <div class="card">
+        <span class="step">2</span>
+        <h3>Paste one line</h3>
+        <p>A short-lived loader pulls a versioned bundle cached for a year and a config cached for a
+           minute. The widget renders inside a shadow root, so the host page cannot restyle it.</p>
+      </div>
+      <div class="card">
+        <span class="step">3</span>
+        <h3>Catch what comes back</h3>
+        <p>Size limit, field validation, rate limits per IP and per widget, a honeypot, an
+           idempotency key, geo enrichment that degrades instead of failing, and a notification that
+           runs off the request path.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="band">
+    <div class="wrap section">
+      <div class="demo">
+        <div>
+          <span class="eyebrow caption-up">The embed</span>
+          <h2>This is the whole integration.</h2>
+          <p class="lede">Everything the widget needs — its config, its rendering, its submission
+             wiring — flows from this one tag.</p>
+
+          <div class="snippet" style="margin-top:32px">
+            <span class="caption-up">Paste into any page</span>
+            <code>&lt;script src=<span class="dim">"http://localhost:8000/widget.js?id=wgt_demo_signup"</span> async&gt;&lt;/script&gt;</code>
+          </div>
+
+          <p class="note">The widget on the right is real: it is being served by this API and it
+             posts to <code>/public/submissions</code> like any other visitor. It is
+             <strong>same-origin</strong> here, though — the cross-origin proof lives on the
+             <a href="http://localhost:5500" target="_blank" rel="noopener">test site</a>, which nginx
+             serves from a different port and which deliberately tries to repaint the widget with
+             hostile CSS.</p>
+        </div>
+
+        <div>
+          <script src="/widget.js?id=wgt_demo_signup" async></script>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap section">
+    <span class="eyebrow caption-up">Under it</span>
+    <h2>Built to fail politely.</h2>
+    <p class="lede">Two dependencies are allowed to break, and each breaks differently on purpose.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Enrichment degrades</h3>
+        <p>IP to location runs inline with a hard timeout and a provider chain. Provider A down,
+           provider B answers. Both down, the submission is stored without geo. It can make a lead
+           poorer; it can never make one fail.</p>
+      </div>
+      <div class="card">
+        <h3>Notifications defer</h3>
+        <p>The request writes a job in the same transaction as the submission and returns. A worker
+           retries on a growing backoff and dead-letters with an alert. A dead SMTP host cannot even
+           slow a submission down.</p>
+      </div>
+      <div class="card">
+        <h3>Retries land once</h3>
+        <p>An <code style="font-family:var(--mono);font-size:13px">Idempotency-Key</code> plus a
+           partial unique index. Two identical requests arriving together still produce exactly one
+           row, which a check-then-insert would not.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="wrap">
+      <img src="/static/brand/icon-32.png" width="22" height="22" alt="">
+      <span class="muted">Widget Platform · FlyRank internship capstone</span>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/docs">API</a>
+        <a href="/health">Health</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

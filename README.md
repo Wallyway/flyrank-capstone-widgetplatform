@@ -28,6 +28,7 @@ their sha256 hash.
 
 | What | Where |
 | --- | --- |
+| The product landing page | <http://localhost:8000> |
 | The customer's website (second origin) | <http://localhost:5500> |
 | The owner's dashboard | <http://localhost:8000/dashboard> — paste an API key |
 | Interactive API docs | <http://localhost:8000/docs> |
@@ -52,6 +53,7 @@ the code clean.
 │  GET  /api/stats/{overview,by-widget,      │                                  │
 │                   geo,timeseries}         ─┘                                  │
 │  GET  /dashboard          the owner's page, a pure client of the routes above │
+│  GET  /                   the product landing page                            │
 └───────────────────────────────────────────────────────────────────────────────┘
 
 ┌─ CUSTOMER WEBSITE ─ any origin, public, cached ───────────────────────────────┐
@@ -108,7 +110,8 @@ app/
 │   └── tenants.py  widgets.py  submissions.py  notifications.py  stats.py
 ├── middleware/     cors.py (public paths only) · body_limit.py
 ├── core/           db pool + migration runner · ids/hashing · error handlers
-├── static/         widget.v1.js · design-tokens.css · dashboard.html · fonts/ · brand/
+├── static/         widget.v1.js · design-tokens.css · landing.html
+│                   dashboard.html · fonts/ · brand/
 └── config.py       every environment variable, one place
 migrations/         numbered SQL, applied once and recorded
 scripts/seed.py     demo data

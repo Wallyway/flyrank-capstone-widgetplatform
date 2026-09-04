@@ -13,6 +13,9 @@ test_site_url: http://localhost:5500
 
 endpoints:
   - method: GET
+    path: /
+    auth: none
+  - method: GET
     path: /health
     auth: none
   - method: GET
