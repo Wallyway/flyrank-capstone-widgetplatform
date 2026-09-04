@@ -1,0 +1,53 @@
+# Defaults are inline so a clean clone runs with `docker compose up` and no .env.
+# If a .env exists, compose picks up its values for the ${...} below.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-widgetuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-widgetpass}
+      POSTGRES_DB: ${POSTGRES_DB:-widgets}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-widgetuser} -d ${POSTGRES_DB:-widgets}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-widgetuser}:${POSTGRES_PASSWORD:-widgetpass}@db:5432/${POSTGRES_DB:-widgets}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+      MAX_BODY_BYTES: ${MAX_BODY_BYTES:-8192}
+      RATE_LIMIT_PER_IP: ${RATE_LIMIT_PER_IP:-10}
+      RATE_LIMIT_PER_IP_WINDOW: ${RATE_LIMIT_PER_IP_WINDOW:-60}
+      RATE_LIMIT_PER_WIDGET: ${RATE_LIMIT_PER_WIDGET:-60}
+      RATE_LIMIT_PER_WIDGET_WINDOW: ${RATE_LIMIT_PER_WIDGET_WINDOW:-60}
+      HONEYPOT_FIELD: ${HONEYPOT_FIELD:-website}
+      GEO_PROVIDERS: ${GEO_PROVIDERS:-ipapi,ipapico}
+      GEO_PROVIDER_A_DOWN: ${GEO_PROVIDER_A_DOWN:-0}
+      GEO_PROVIDER_B_DOWN: ${GEO_PROVIDER_B_DOWN:-0}
+      GEO_FORCE_CLIENT_IP: ${GEO_FORCE_CLIENT_IP:-}
+      WEBHOOK_URL: ${WEBHOOK_URL:-}
+      NOTIFY_MAX_ATTEMPTS: ${NOTIFY_MAX_ATTEMPTS:-4}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # The "customer website": a second origin, which is the whole point of CORS.
+  testsite:
+    image: nginx:alpine
+    volumes:
+      - ./testsite:/usr/share/nginx/html:ro
+    ports:
+      - "5500:80"
+
+volumes:
+  pgdata:

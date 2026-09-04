@@ -47,9 +47,87 @@ Proofs are added in the stage that produces them, not at the end.
 - [ ] 1 · Layered architecture — data / logic / HTTP separated
 - [ ] 2 · Validation at the boundary — bad input → clean 4xx, never a 500
 - [ ] 3 · ≥1 background job — off the request path, retries + failure alert
-- [ ] 4 · Real persistence — schema as migrations, right indexes, isolated tenants
+- [x] 4 · Real persistence — schema as migrations, right indexes, isolated tenants
+
+**Stage 2.** `docker compose up` boots the stack, the migration runner applies `001_init.sql` once
+and records it, and a restart re-applies nothing.
+
+```
+$ docker compose logs app --tail 8
+app-1  | INFO:     Started server process [1]
+app-1  | INFO:     Waiting for application startup.
+app-1  | Server running | db ok | schema up to date
+app-1  | INFO:     Application startup complete.
+app-1  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+$ curl -s http://localhost:8000/health
+{"status":"ok","database":"ok"}
+
+$ docker compose exec -T db psql -U widgetuser -d widgets -c 'SELECT * FROM schema_migrations;'
+   version    |          applied_at
+--------------+-------------------------------
+ 001_init.sql | 2026-09-04 18:53:45.321906+00
+(1 row)
+```
+
+Tables and the indexes the queries actually need:
+
+```
+$ docker compose exec -T db psql -U widgetuser -d widgets -c '\dt'
+ public | api_keys          | table | widgetuser
+ public | notification_jobs | table | widgetuser
+ public | schema_migrations | table | widgetuser
+ public | submissions       | table | widgetuser
+ public | tenants           | table | widgetuser
+ public | widgets           | table | widgetuser
+(6 rows)
+
+$ ... -c "SELECT tablename, indexname FROM pg_indexes WHERE schemaname='public' ORDER BY 1,2;"
+     tablename     |            indexname
+-------------------+----------------------------------
+ api_keys          | api_keys_key_hash_idx
+ api_keys          | api_keys_pkey
+ notification_jobs | notification_jobs_due_idx
+ notification_jobs | notification_jobs_pkey
+ notification_jobs | notification_jobs_submission_idx
+ schema_migrations | schema_migrations_pkey
+ submissions       | submissions_idempotency_idx
+ submissions       | submissions_pkey
+ submissions       | submissions_tenant_idx
+ submissions       | submissions_widget_idx
+ tenants           | tenants_pkey
+ widgets           | widgets_pkey
+ widgets           | widgets_tenant_idx
+(13 rows)
+```
+
+The seed creates two tenants so isolation can be tried by hand:
+
+```
+$ docker compose exec -T app python seed.py
+Acme Analytics  (tenant 1)
+  API key: wpk_lJ1ATZRVf-9SQECZv7qyzLGo3Lhp3Tltlhd_iSpocEE
+  wgt_d164428aed89f49d  signup_form   Join the Acme beta
+  wgt_b1047ac084d968b0  contact_form  Talk to us
+
+Globex Industrial  (tenant 2)
+  API key: wpk_QnpTbq0vTr1gcfTKPUns90cPTsXyKbJ0OZr_56ASJuM
+  wgt_afbd2a84aa174ae4  cta           Book a Globex demo
+```
 - [ ] 5 · Idempotency where it matters — the retried action happens once
-- [ ] 6 · Secrets clean — env only, hashed if stored, never logged
+- [x] 6 · Secrets clean — env only, hashed if stored, never logged
+
+**Stage 2.** The keys printed above are the only time they exist in the clear. The table holds
+digests:
+
+```
+$ ... -c "SELECT tenant_id, label, left(key_hash, 24) || '...' AS key_hash FROM api_keys;"
+ tenant_id | label |          key_hash
+-----------+-------+-----------------------------
+         1 | seed  | d0032135c2b1a60614437dc3...
+         2 | seed  | 4eb7ffd36f327c58d3009b75...
+(2 rows)
+```
 - [ ] 7 · Cost tracked, if AI is used — no AI at runtime in this system
 
 ---
