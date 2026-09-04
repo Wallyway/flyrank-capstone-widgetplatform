@@ -205,6 +205,17 @@ same-origin and is therefore *not* the CORS proof.
 nothing. Both HTML pages now go through one `html_page()` helper with `Cache-Control: no-store`,
 since an app shell that reads live data should never be served from a cache.
 
+## Stage 15 — the mark as the hero
+
+Expo builds its homepage around the icon: the mark sits dead centre inside a field of thin radiating
+lines with dots on their ends, and the copy arranges itself around it. Adapted here to a centred
+layout, the mark sits above the headline rather than beside it, on the same sky wash.
+
+The ray field is generated rather than drawn — 72 rays and 96 dots from a **seeded** random number
+generator, so the burst is identical on every build and a reader never sees it shift between
+deploys. It is masked with a radial gradient so the field fades out instead of ending at a hard
+crop, and it inherits `--ink`, which means it will follow the palette if the palette ever changes.
+
 ## A mistake worth writing down
 
 In Stage 2 I pasted the seed's output straight into `EVIDENCE.md`, and the seed prints API keys. Two
