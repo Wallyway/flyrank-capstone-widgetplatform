@@ -196,9 +196,73 @@ the first one injects the script.
 
 ## Public submission API
 
-- [ ] Cross-origin submissions work: CORS headers correct, preflight (`OPTIONS`) handled.
-- [ ] All incoming input validated; malformed and oversized payloads rejected with 4xx and JSON errors.
-- [ ] Valid submissions stored safely, linked to the right widget and tenant.
+- [x] Cross-origin submissions work: CORS headers correct, preflight (`OPTIONS`) handled.
+
+**Stage 5.** The preflight is answered by the middleware and never reaches the route:
+
+```
+$ curl -i -X OPTIONS http://localhost:8000/public/submissions \
+    -H 'Origin: http://localhost:5500' \
+    -H 'Access-Control-Request-Method: POST' \
+    -H 'Access-Control-Request-Headers: content-type, idempotency-key'
+HTTP/1.1 204 No Content
+access-control-allow-origin: *
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-allow-headers: content-type, idempotency-key
+access-control-max-age: 600
+vary: Origin
+```
+
+The real request that follows it:
+
+```
+$ curl -i -X POST http://localhost:8000/public/submissions -H 'Origin: http://localhost:5500' \
+    -H 'Content-Type: application/json' \
+    -d '{"widget_id":"wgt_demo_signup","data":{"email":"ada@example.com","name":"Ada Lovelace","role":"Engineering"},"website":""}'
+HTTP/1.1 201 Created
+access-control-allow-origin: *
+{"id":1,"status":"received"}
+```
+
+The admin API is deliberately excluded — `curl -I -H 'Origin: http://evil.example' /api/widgets`
+returns **0** `access-control-*` headers, so no page can drive it from a browser.
+
+- [x] All incoming input validated; malformed and oversized payloads rejected with 4xx and JSON errors.
+
+**Stage 5.** Every rejection below is a 4xx with a named field. The log shows **0** responses with
+status 500 across the whole run:
+
+```
+malformed JSON            400 {"error":"body: not valid JSON"}
+not an object             400 {"error":"body: must be a JSON object"}
+missing widget_id         400 {"error":"widget_id: Field required"}
+unknown widget            404 {"error":"Widget not found"}
+bad email + bad select
+  + unknown field         400 {"error":"surprise: unknown field for this widget; email: not a valid email address; role: must be one of ['Engineering', 'Design', 'Product', 'Something else']"}
+name over its max_length  400 {"error":"name: must be at most 80 characters"}
+extra top-level key       400 {"error":"tenant_id: unexpected field"}
+
+$ python3 -c '... 100 KB body ...' > big.json && curl --data-binary @big.json ...
+  sent bytes: 100074
+413 {"error":"Payload too large: limit is 8192 bytes"}
+
+$ docker compose logs app | grep -c ' 500 '
+  500 responses: 0
+```
+
+- [x] Valid submissions stored safely, linked to the right widget and tenant.
+
+**Stage 5.**
+
+```
+$ docker compose exec -T db psql -U widgetuser -d widgets \
+    -c "SELECT id, widget_id, tenant_id, data->>'email' AS email, idempotency_key, ip FROM submissions ORDER BY id;"
+ id |    widget_id    | tenant_id |       email       | idempotency_key |      ip
+----+-----------------+-----------+-------------------+-----------------+--------------
+  1 | wgt_demo_signup |         1 | ada@example.com   |                 | 192.168.97.1
+  2 | wgt_demo_signup |         1 | grace@example.com | retry-abc-123   | 192.168.97.1
+(2 rows)
+```
 
 ## Abuse protection
 
@@ -232,7 +296,11 @@ app/
 ├── core/          db pool, migration runner, ids/hashing, error handlers
 └── config.py      every env var, one place
 ```
-- [ ] 2 · Validation at the boundary — bad input → clean 4xx, never a 500
+- [x] 2 · Validation at the boundary — bad input → clean 4xx, never a 500
+
+**Stages 3 and 5.** See the two blocks above: the admin API rejects a bad widget body with a named
+field, and the public endpoint rejects malformed, oversized, unknown-field and wrong-type payloads
+the same way. `grep -c ' 500 '` over the whole session log returns 0.
 - [ ] 3 · ≥1 background job — off the request path, retries + failure alert
 - [x] 4 · Real persistence — schema as migrations, right indexes, isolated tenants
 
@@ -301,7 +369,25 @@ Globex Industrial  (tenant 2)
   API key: wpk_QnpTbq0vTr1gcfTKPUns90cPTsXyKbJ0OZr_56ASJuM
   wgt_afbd2a84aa174ae4  cta           Book a Globex demo
 ```
-- [ ] 5 · Idempotency where it matters — the retried action happens once
+- [x] 5 · Idempotency where it matters — the retried action happens once
+
+**Stage 5.** A visitor whose connection drops and whose browser retries must not become two leads.
+The same `Idempotency-Key` sent three times produces one row:
+
+```
+$ for i in 1 2 3; do curl -X POST .../public/submissions \
+    -H 'Idempotency-Key: retry-abc-123' \
+    -d '{"widget_id":"wgt_demo_signup","data":{"email":"grace@example.com","name":"Grace"}}'; done
+  attempt 1 -> 201 {"id":2,"status":"received"}
+  attempt 2 -> 200 {"id":2,"status":"replayed"}
+  attempt 3 -> 200 {"id":2,"status":"replayed"}
+
+$ ... -tAc "SELECT COUNT(*) FROM submissions WHERE idempotency_key = 'retry-abc-123';"
+1
+```
+
+The guarantee is the partial unique index, not the lookup: `ON CONFLICT DO NOTHING` means two
+requests arriving at the same moment still produce one row, which a check-then-insert would not.
 - [x] 6 · Secrets clean — env only, hashed if stored, never logged
 
 **Stage 2.** The keys printed above are the only time they exist in the clear. The table holds

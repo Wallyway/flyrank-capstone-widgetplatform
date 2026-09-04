@@ -7,10 +7,13 @@ from app.api.public import router as public_router
 from app.api.widgets import router as widgets_router
 from app.core.db import build_pool, run_migrations
 from app.core.errors import register_error_handlers
+from app.middleware.body_limit import BodyLimitMiddleware
 from app.middleware.cors import PublicCORSMiddleware
+from app.repositories.submissions import SubmissionsRepository
 from app.repositories.tenants import TenantsRepository
 from app.repositories.widgets import WidgetsRepository
 from app.services.delivery import DeliveryService
+from app.services.submissions import SubmissionsService
 from app.services.widgets import WidgetsService
 
 
@@ -36,7 +39,12 @@ app.state.tenants = TenantsRepository(app.state.pool)
 app.state.widgets = WidgetsRepository(app.state.pool)
 app.state.widgets_service = WidgetsService(app.state.widgets)
 app.state.delivery = DeliveryService(app.state.widgets)
+app.state.submissions = SubmissionsRepository(app.state.pool)
+app.state.submissions_service = SubmissionsService(app.state.delivery, app.state.submissions)
 
+# Order matters: the last one added is the outermost, so CORS wraps the size
+# check and a rejected 413 still comes back with its CORS headers attached.
+app.add_middleware(BodyLimitMiddleware)
 app.add_middleware(PublicCORSMiddleware)
 register_error_handlers(app)
 app.include_router(public_router)

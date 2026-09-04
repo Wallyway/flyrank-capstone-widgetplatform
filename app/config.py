@@ -15,6 +15,10 @@ BUNDLE_MAX_AGE = int(os.getenv("BUNDLE_MAX_AGE", "31536000"))
 LOADER_MAX_AGE = int(os.getenv("LOADER_MAX_AGE", "300"))
 CONFIG_MAX_AGE = int(os.getenv("CONFIG_MAX_AGE", "60"))
 
+# Off by default. Turning it on means believing X-Forwarded-For, which is only
+# safe when a proxy you control is the one setting it.
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "0") == "1"
+
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "8192"))
 MAX_FIELD_LENGTH = int(os.getenv("MAX_FIELD_LENGTH", "2000"))
 
