@@ -316,6 +316,16 @@ picture. The capture script lives outside the repository, so retaking it is a co
 afternoon. The video slot still works: drop `dashboard.mp4` into `app/static/brand/` and the page's
 `HEAD` check plays it instead.
 
+**And a fourth, spotted by the person looking at the page.** Above the screenshot sat a huge blurred
+smear. Two mistakes stacked: the `<video>` element carried `poster="icon-16.png"` — a sixteen-pixel
+icon stretched across a thousand — and it was visible at all because `hidden` is a `display: none`
+from the browser's own stylesheet, which loses to any author rule, and mine said `.frame-body video
+{ display: block }`. The attribute was there, doing nothing. Visibility is a class now, and the
+poster is the screenshot, so a recording dropped in later opens on the right frame.
+
+Both of those are the same lesson as the flex-direction bug earlier in this stage: I keep shipping
+visual changes I have only read, in a project where I check everything else by running it.
+
 **A 500 I introduced and then removed.** Allowlisting `dashboard.mp4` before the file existed meant
 `read_bytes()` on a missing path — a `500` on a public route, in a system whose whole argument is
 that it never returns one. Being on the allowlist and being on disk are two different facts. Both

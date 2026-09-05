@@ -189,7 +189,8 @@
       margin-left: 10px; font-family: var(--mono); font-size: 11px; color: var(--muted);
     }
     .frame-body { background: var(--canvas); }
-    .frame-body video { display: block; width: 100%; height: auto; }
+    .frame-body video { display: none; width: 100%; height: auto; }
+    .frame-body video.playing { display: block; }
 
     .frame-body img { display: block; width: 100%; height: auto; }
 
@@ -576,8 +577,8 @@
           <div class="frame-body">
             <!-- Replaced by a real recording the moment
                  app/static/brand/dashboard.mp4 exists. -->
-            <video id="dash-video" hidden muted loop playsinline preload="metadata"
-                   poster="/static/brand/icon-16.png"></video>
+            <video id="dash-video" muted loop playsinline preload="metadata"
+                   poster="/static/brand/dashboard.png"></video>
 
             <img id="dash-shot" src="/static/brand/dashboard.png"
                  width="1960" height="1647" alt="The owner's dashboard: total leads, submissions
@@ -706,7 +707,7 @@
     fetch("/static/brand/dashboard.mp4", { method: "HEAD" }).then(function (res) {
       if (!res.ok) return;
       video.src = "/static/brand/dashboard.mp4";
-      video.removeAttribute("hidden");
+      video.classList.add("playing");
       video.play().catch(function () {});
       mock.remove();
     }).catch(function () {});
