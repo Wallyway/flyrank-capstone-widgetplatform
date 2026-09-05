@@ -285,6 +285,44 @@ committed — paths only, no script, no external references. It is also the one 
 not ours is allowed on the page, on the same principle Expo uses: somebody else's logo is content,
 not chrome.
 
+## Stage 18 — showing the dashboard, and three bugs
+
+**A broken illustration, shipped.** The browser mock in the "Paste one line" card was `display:
+flex` with no direction, so the chrome bar and the page sat *side by side* instead of stacked — a
+black slab across the left half. It went out in Stage 17 and no test could have caught it, because
+no test looks at CSS.
+
+**I had said screenshots were impossible. They were not.** The claim rested on one failure back in
+Stage 4, which is not enough to claim anything. Retrying properly: headless Chromium hangs in both
+the new and the old mode after `CVDisplayLinkCreateWithCGDisplay failed`, and `screencapture` exits
+1 because this terminal has no Screen Recording permission — but *headless* was the part that was
+broken, not the browser. Running Brave visible with `--remote-debugging-port` and driving it over the
+DevTools protocol works: navigate, put the key into `localStorage`, capture. Two attempts stood
+between "impossible" and "twenty lines of Python", and I had stopped at the first one.
+
+**What the first capture caught.** A real personal email address, in the submissions table, on its
+way into a public repository. So the shot is taken against a throwaway tenant instead: a hundred and
+forty-seven fabricated leads spread across a fortnight, plausible names, no real address anywhere,
+deleted immediately afterwards. It also fixed a second problem — the honest dashboard had every
+submission landing today, so the fourteen-day chart was twelve empty columns and two bars. A figure
+should show the thing working, and that one showed it idle.
+
+The key never appears on screen: it goes into `localStorage` through the protocol rather than being
+typed into the form.
+
+**Screenshot over drawing.** The HTML recreation that stood in for this is gone. It had one real
+advantage — it could not go stale — and that is the cost now accepted: a redesign means retaking the
+picture. The capture script lives outside the repository, so retaking it is a command, not an
+afternoon. The video slot still works: drop `dashboard.mp4` into `app/static/brand/` and the page's
+`HEAD` check plays it instead.
+
+**A 500 I introduced and then removed.** Allowlisting `dashboard.mp4` before the file existed meant
+`read_bytes()` on a missing path — a `500` on a public route, in a system whose whole argument is
+that it never returns one. Being on the allowlist and being on disk are two different facts. Both
+asset routes go through one `immutable_asset()` helper now, and two tests cover it: an
+allowlisted-but-absent file must be a clean 404, and the files that do exist must still serve with
+their immutable cache. Fifty-three tests.
+
 ## A mistake worth writing down
 
 In Stage 2 I pasted the seed's output straight into `EVIDENCE.md`, and the seed prints API keys. Two

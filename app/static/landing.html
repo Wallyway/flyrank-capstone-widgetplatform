@@ -172,6 +172,37 @@
     }
     .card h3 { font-size: 16px; font-weight: 600; }
     .card p { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--body); }
+
+    /* --- the dashboard figure -------------------------------------------- */
+    .shot { margin: 36px 0 32px; }
+    .frame {
+      border: 1px solid var(--hairline-strong); border-radius: var(--r-xl);
+      overflow: hidden; background: var(--canvas); box-shadow: var(--shadow-card);
+    }
+    .frame-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 14px; height: 36px;
+      background: var(--canvas-soft); border-bottom: 1px solid var(--hairline-strong);
+    }
+    .frame-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--hairline-strong); }
+    .frame-bar span {
+      margin-left: 10px; font-family: var(--mono); font-size: 11px; color: var(--muted);
+    }
+    .frame-body { background: var(--canvas); }
+    .frame-body video { display: block; width: 100%; height: auto; }
+
+    .frame-body img { display: block; width: 100%; height: auto; }
+
+    /* The figure lifts into place once, when it first comes into view. */
+    .shot .frame {
+      opacity: 0; transform: translateY(14px);
+      transition: opacity 700ms var(--ease), transform 700ms var(--ease);
+    }
+    .shot.seen .frame { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .shot .frame { opacity: 1; transform: none; }
+    }
+
     /* --- illustrated feature cards --------------------------------------- */
     .features {
       margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
@@ -212,9 +243,9 @@
 
     /* A browser window, because "it renders on a page you do not own" is
        easier to show than to say. */
-    .browser { width: 100%; padding: 16px; display: flex; }
+    .browser { width: 100%; padding: 16px; display: flex; flex-direction: column; }
     .chrome {
-      display: flex; align-items: center; gap: 6px;
+      flex: none; display: flex; align-items: center; gap: 6px;
       padding: 0 10px; height: 26px;
       background: #232323; border-radius: 7px 7px 0 0;
     }
@@ -226,7 +257,6 @@
       flex: 1; padding: 14px; background: #f7f7f8;
       border-radius: 0 0 7px 7px; display: flex; flex-direction: column; gap: 9px;
     }
-    .browser > div { flex: 1; display: flex; flex-direction: column; }
     .skeleton-line { height: 7px; border-radius: 4px; background: #e2e3e6; }
     .w60 { width: 60%; } .w40 { width: 40%; } .w50 { width: 50%; }
     .mini-widget {
@@ -532,6 +562,35 @@
     </div>
   </section>
 
+  <section class="band">
+    <div class="wrap section">
+      <span class="eyebrow caption-up">The dashboard</span>
+      <h2>Every lead, and where it came from.</h2>
+      <p class="lede">Counts over time, per widget and per country, every query scoped to your
+         tenant. What the honeypot caught is stored but kept out of these numbers, so the total
+         you see is leads and nothing else.</p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><i></i><i></i><i></i><span>localhost:8000/dashboard</span></div>
+          <div class="frame-body">
+            <!-- Replaced by a real recording the moment
+                 app/static/brand/dashboard.mp4 exists. -->
+            <video id="dash-video" hidden muted loop playsinline preload="metadata"
+                   poster="/static/brand/icon-16.png"></video>
+
+            <img id="dash-shot" src="/static/brand/dashboard.png"
+                 width="1960" height="1647" alt="The owner's dashboard: total leads, submissions
+                 per day, breakdowns by widget and country, and the most recent submissions."
+                 loading="lazy" decoding="async">
+          </div>
+        </div>
+      </figure>
+
+      <a class="btn primary" href="/dashboard">Open the dashboard <span class="arrow">&#8594;</span></a>
+    </div>
+  </section>
+
   <div class="wrap section">
     <span class="eyebrow caption-up">Under it</span>
     <h2>Built to fail politely.</h2>
@@ -634,6 +693,35 @@
     schedule();
   });
 })();
+
+  // If a real recording has been dropped in, it wins; otherwise the drawn
+  // version stands in. Checked rather than assumed, so nobody has to remember
+  // to edit this file after exporting a video.
+  (function () {
+    var video = document.getElementById("dash-video");
+    var mock = document.getElementById("dash-shot");
+    var shot = document.querySelector(".shot");
+    if (!video || !mock || !shot) return;
+
+    fetch("/static/brand/dashboard.mp4", { method: "HEAD" }).then(function (res) {
+      if (!res.ok) return;
+      video.src = "/static/brand/dashboard.mp4";
+      video.removeAttribute("hidden");
+      video.play().catch(function () {});
+      mock.remove();
+    }).catch(function () {});
+
+    // Grow the bars once, the first time the figure comes into view.
+    if (!("IntersectionObserver" in window)) { shot.classList.add("seen"); return; }
+    var watcher = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        shot.classList.add("seen");
+        watcher.disconnect();
+      });
+    }, { threshold: 0.25 });
+    watcher.observe(shot);
+  })();
 </script>
 </body>
 </html>

@@ -111,7 +111,7 @@ app/
 ├── middleware/     cors.py (public paths only) · body_limit.py
 ├── core/           db pool + migration runner · ids/hashing · error handlers
 ├── static/         widget.v1.js · design-tokens.css · landing.html
-│                   dashboard.html · fonts/ · brand/
+│                   dashboard.html · fonts/ · brand/ (logo, dashboard.png)
 └── config.py       every environment variable, one place
 migrations/         numbered SQL, applied once and recorded
 scripts/seed.py     demo data

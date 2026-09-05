@@ -66,18 +66,30 @@ FONTS = {
 }
 
 
-@router.api_route("/static/fonts/{filename}", methods=["GET", "HEAD"], summary="Self-hosted webfonts")
-def font_file(filename: str):
-    media_type = FONTS.get(filename)
-    if media_type is None:
-        raise HTTPException(status_code=404, detail="Unknown font")
+def immutable_asset(folder: str, filename: str, allowed: dict, missing: str) -> Response:
+    """Serve one file from an allowlist, or 404.
+
+    Two checks, not one: the name has to be on the list *and* the file has to be
+    there. An allowlisted name whose file is absent is a normal state here — the
+    landing's optional recording is exactly that — and it must answer 404 rather
+    than raise.
+    """
+    media_type = allowed.get(filename)
+    path = STATIC_DIR / folder / filename
+    if media_type is None or not path.is_file():
+        raise HTTPException(status_code=404, detail=missing)
     return Response(
-        content=(STATIC_DIR / "fonts" / filename).read_bytes(),
+        content=path.read_bytes(),
         media_type=media_type,
-        # A font file's contents never change under its name, so it gets the
-        # same one-year immutable cache the versioned bundle gets.
+        # These filenames never change contents, so a browser need never ask
+        # about one twice.
         headers={"Cache-Control": f"public, max-age={config.BUNDLE_MAX_AGE}, immutable"},
     )
+
+
+@router.api_route("/static/fonts/{filename}", methods=["GET", "HEAD"], summary="Self-hosted webfonts")
+def font_file(filename: str):
+    return immutable_asset("fonts", filename, FONTS, "Unknown font")
 
 
 BRAND = {f"icon-{px}.png": "image/png" for px in (512, 180, 48, 32, 16)}
@@ -87,19 +99,17 @@ BRAND = {f"icon-{px}.png": "image/png" for px in (512, 180, 48, 32, 16)}
 BRAND.update({
     "flyrank-wordmark-onlight.svg": "image/svg+xml",
     "flyrank-wordmark-ondark.svg": "image/svg+xml",
+    "dashboard.png": "image/png",
+    # Optional. The landing checks for this and keeps the still image when it is
+    # absent, so a missing file is a choice rather than a gap.
+    "dashboard.mp4": "video/mp4",
+    "dashboard.webm": "video/webm",
 })
 
 
 @router.api_route("/static/brand/{filename}", methods=["GET", "HEAD"], summary="The logo, at the sizes a browser asks for")
 def brand_asset(filename: str):
-    media_type = BRAND.get(filename)
-    if media_type is None:
-        raise HTTPException(status_code=404, detail="Unknown brand asset")
-    return Response(
-        content=(STATIC_DIR / "brand" / filename).read_bytes(),
-        media_type=media_type,
-        headers={"Cache-Control": f"public, max-age={config.BUNDLE_MAX_AGE}, immutable"},
-    )
+    return immutable_asset("brand", filename, BRAND, "Unknown brand asset")
 
 
 @router.api_route("/static/design-tokens.css", methods=["GET", "HEAD"], summary="The shared design tokens")

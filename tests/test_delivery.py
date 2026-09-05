@@ -50,3 +50,24 @@ def test_an_inactive_widget_stops_being_served(client, tenant, widget):
     client.patch(f"/api/widgets/{widget['id']}", json={"active": False}, headers=tenant["auth"])
     assert client.get(f"/public/widgets/{widget['id']}/config").status_code == 404
     assert client.get(f"/widget.js?id={widget['id']}").status_code == 404
+
+
+def test_an_allowlisted_asset_that_is_not_there_is_a_404(client):
+    """The landing's optional recording is allowlisted but usually absent.
+
+    Being on the list is not the same as being on disk, and the difference
+    used to be a 500.
+    """
+    assert client.get("/static/brand/dashboard.mp4").status_code == 404
+    assert client.get("/static/brand/dashboard.mp4").json() == {"error": "Unknown brand asset"}
+
+
+def test_the_assets_that_do_exist_still_serve(client):
+    for path in [
+        "/static/brand/icon-512.png",
+        "/static/brand/flyrank-wordmark-onlight.svg",
+        "/static/fonts/inter-latin.woff2",
+    ]:
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert "immutable" in response.headers["cache-control"], path
