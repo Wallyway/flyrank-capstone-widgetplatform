@@ -11,6 +11,24 @@ any body. That single fact is what the design is about.
 
 ---
 
+## What it looks like
+
+The product page at `/`. The widget further down that page is real — it is served by this API and
+posts to the same public endpoint any visitor would.
+
+![The landing page: the headline, the brand mark in a field of rays, and a status pill linking through to the second-origin test site](docs/landing.png)
+
+The owner's dashboard at `/dashboard`: counts over time, per-widget and per-country breakdowns, and
+the most recent submissions. Every query behind it is scoped to one tenant.
+
+![The dashboard: total leads on a dark tile, a fourteen-day chart, breakdowns by widget and by country, and a table of recent submissions](app/static/brand/dashboard.png)
+
+> The figures in that screenshot come from throwaway demo data created for the picture and deleted
+> afterwards — not from anyone's real inbox. What the honeypot caught is stored but kept out of
+> every number shown, which is why "spam blocked" is counted separately.
+
+---
+
 ## Run it
 
 You need Docker. Nothing else — no keys, no accounts, no `.env` to fill in first.
